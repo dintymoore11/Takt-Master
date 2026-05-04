@@ -341,29 +341,40 @@ function gameView() {
         <div class="stage">
           <header class="topbar">
             <div class="topbar-title">
-              <strong>Takt Master</strong>
-              <span>${state.mode.name} · Project ${state.projectRound}</span>
+              <strong>TAKT MASTER</strong>
+              <span>Project ${state.projectRound}</span>
+            </div>
+            <div class="project-readout">
+              <span>Current Project</span>
+              <strong>${currentProject().name}</strong>
+              <em>${state.mode.name}</em>
             </div>
             <div class="arcade-hud">
-              <div class="hud-tile profit ${state.profit < 0 ? 'bad' : ''}">
-                <span>Profit</span>
-                <strong>${formatMoney(state.profit)}</strong>
-              </div>
               <div class="hud-tile day ${state.day > projectDuration() ? 'bad' : ''}">
                 <span>Day</span>
                 <strong>${state.day}</strong>
                 <em>/${projectDuration()}</em>
               </div>
-            </div>
-            <div class="topbar-secondary">
-              ${scheduleBar()}
-              ${budgetGauge()}
+              <div class="hud-tile profit ${state.profit < 0 ? 'bad' : ''}">
+                <span>Profit</span>
+                <strong>${formatMoney(state.profit)}</strong>
+              </div>
             </div>
           </header>
           ${liveDamagesBanner()}
 
-          <div class="playfield">
-            ${towerView()}
+          <div class="game-layout">
+            <aside class="side-panel left-panel">
+              ${scheduleBar()}
+              ${budgetGauge()}
+              ${roadblockPanel()}
+            </aside>
+            <div class="playfield">
+              ${towerView()}
+            </div>
+            <aside class="side-panel right-panel">
+              ${tradePanel()}
+            </aside>
           </div>
         </div>
         <footer class="unity-footer">
@@ -373,6 +384,38 @@ function gameView() {
       </section>
       ${state.phase === 'ended' ? endScreen() : ''}
     </main>
+  `
+}
+
+function tradePanel() {
+  return `
+    <section class="trade-panel compact-panel">
+      <div class="trade-panel-heading">
+        <strong>Trades</strong>
+        <span>${roundPhaseHelp()}</span>
+      </div>
+      <div class="trade-list" style="--trade-count: 1">
+        ${state.trades.map((trade, index) => tradeCard(trade, index)).join('')}
+      </div>
+    </section>
+  `
+}
+
+function roadblockPanel() {
+  return `
+    <section class="roadblock-panel compact-panel">
+      <div class="trade-panel-heading">
+        <strong>Roadblocks</strong>
+        <span>${state.roadblocks.length}</span>
+      </div>
+      <div class="roadblock-list">
+        ${
+          state.roadblocks.length
+            ? state.roadblocks.map((roadblock, index) => roadblockItem(roadblock, index)).join('')
+            : '<p>Clear</p>'
+        }
+      </div>
+    </section>
   `
 }
 
