@@ -1,10 +1,10 @@
-import { BASE_PROJECT_BUDGET } from './gameConfig.js'
-import { visualForTrade } from './visualAssets.js'
+import { BASE_PROJECT_BUDGET } from "./gameConfig.js";
+import { visualForTrade } from "./visualAssets.js";
 
 export function createInitialState() {
   return {
-    phase: 'title',
-    roundPhase: 'idle',
+    phase: "title",
+    roundPhase: "idle",
     mode: null,
     projectRound: 1,
     totalProfit: 0,
@@ -18,7 +18,7 @@ export function createInitialState() {
     liquidatedDamages: 0,
     selectedTradeIndex: 0,
     selectedZone: 1,
-    focusArea: 'zones',
+    focusArea: "zones",
     selectedRoadblockIndex: 0,
     trades: [],
     roadblocks: [],
@@ -26,16 +26,16 @@ export function createInitialState() {
     timer: null,
     zoneWorkThisRound: new Set(),
     lastTradeByZone: {},
-    scoreName: '',
+    scoreName: "",
     scoreSaved: false,
     nameCursor: 0,
     quitConfirm: false,
     endActionIndex: 0,
-  }
+  };
 }
 
 export function createTradeState(trade, index) {
-  const visualKey = trade.visualKey ?? trade.key
+  const visualKey = trade.visualKey ?? trade.key;
 
   return {
     ...trade,
@@ -50,14 +50,14 @@ export function createTradeState(trade, index) {
     delayedToday: false,
     lastRoll: null,
     pendingSteps: 0,
-    waitReason: '',
+    waitReason: "",
     zoneStarts: {},
     zoneWorkWeeks: {},
     finishDay: null,
     pushedUntil: 0,
-    pushFlash: '',
+    pushFlash: "",
     previousZone: null,
     frustratedUntil: 0,
-    frustrationReason: '',
-  }
+    frustrationReason: "",
+  };
 }

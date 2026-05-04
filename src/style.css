@@ -34,7 +34,11 @@ body {
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 12% 12%, rgba(255, 242, 168, 0.2) 0 10%, transparent 26%),
+    radial-gradient(
+      circle at 12% 12%,
+      rgba(255, 242, 168, 0.2) 0 10%,
+      transparent 26%
+    ),
     linear-gradient(180deg, #17283a 0%, #111820 52%, #0b1017 100%);
 }
 
@@ -55,8 +59,13 @@ button {
   padding: 0;
   overflow: hidden;
   background:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 100% 4px,
-    radial-gradient(circle at 50% 0%, rgba(56, 226, 255, 0.12), transparent 42%),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 100%
+      4px,
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(56, 226, 255, 0.12),
+      transparent 42%
+    ),
     linear-gradient(180deg, #17283a 0%, #111820 56%, #0b1017 100%);
 }
 
@@ -78,7 +87,10 @@ button {
 
 .title-screen {
   width: min(1500px, 100%);
-  grid-template-columns: minmax(320px, 0.8fr) minmax(300px, 0.72fr) minmax(420px, 1.05fr);
+  grid-template-columns: minmax(320px, 0.8fr) minmax(300px, 0.72fr) minmax(
+      420px,
+      1.05fr
+    );
   align-items: center;
 }
 
@@ -390,7 +402,9 @@ h2 {
   border-radius: 4px;
   color: var(--ink);
   background: linear-gradient(#fff9d9, #e0bd5b);
-  box-shadow: inset 0 3px rgba(255, 255, 255, 0.85), 0 8px 0 #1d2630;
+  box-shadow:
+    inset 0 3px rgba(255, 255, 255, 0.85),
+    0 8px 0 #1d2630;
   cursor: pointer;
 }
 
@@ -422,7 +436,9 @@ h2 {
 .restart:hover,
 .restart:focus-visible {
   transform: translateY(3px);
-  box-shadow: inset 0 3px rgba(255, 255, 255, 0.85), 0 5px 0 #1d2630;
+  box-shadow:
+    inset 0 3px rgba(255, 255, 255, 0.85),
+    0 5px 0 #1d2630;
   outline: none;
 }
 
@@ -510,8 +526,7 @@ h2 {
   padding: 9px 14px 10px;
   border-bottom: 4px solid var(--line);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 48%),
-    #111820;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 48%), #111820;
   color: #fff;
   box-shadow: 0 8px 0 rgba(17, 24, 32, 0.24);
 }
@@ -580,8 +595,7 @@ h2 {
   border: 3px solid #05080b;
   border-radius: 4px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.26), transparent 42%),
-    #1f8f4d;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26), transparent 42%), #1f8f4d;
   box-shadow:
     inset 0 3px rgba(255, 255, 255, 0.24),
     0 5px 0 #05080b;
@@ -608,8 +622,7 @@ h2 {
   grid-template-columns: 1fr auto;
   column-gap: 4px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.26), transparent 42%),
-    #1d72c9;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26), transparent 42%), #1d72c9;
 }
 
 .hud-tile.day span {
@@ -860,8 +873,7 @@ h2 {
   border: 2px solid var(--line);
   border-radius: 4px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.68), transparent 44%),
-    #ffe8bf;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.68), transparent 44%), #ffe8bf;
   color: var(--ink);
   text-align: left;
   box-shadow: 0 3px 0 rgba(29, 38, 48, 0.22);
@@ -961,8 +973,16 @@ h2 {
   padding: 0 4px;
   perspective: 1280px;
   background:
-    radial-gradient(ellipse at 50% 96%, rgba(31, 41, 55, 0.56), transparent 49%),
-    linear-gradient(180deg, transparent 0 34%, rgba(255, 255, 255, 0.04) 34% 100%);
+    radial-gradient(
+      ellipse at 50% 96%,
+      rgba(31, 41, 55, 0.56),
+      transparent 49%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 34%,
+      rgba(255, 255, 255, 0.04) 34% 100%
+    );
 }
 
 .tower {
@@ -977,8 +997,7 @@ h2 {
   isolation: isolate;
   transform: rotateX(1.5deg) rotateY(-5deg) skewY(-0.5deg) scale(1.06);
   transform-origin: bottom center;
-  filter:
-    drop-shadow(26px 22px 0 rgba(27, 37, 44, 0.22))
+  filter: drop-shadow(26px 22px 0 rgba(27, 37, 44, 0.22))
     drop-shadow(0 0 18px rgba(130, 200, 241, 0.18));
 }
 
@@ -1008,7 +1027,11 @@ h2 {
   border: 3px solid var(--line);
   border-left: 0;
   background:
-    repeating-linear-gradient(180deg, rgba(37, 49, 58, 0.16) 0 4px, transparent 4px 44px),
+    repeating-linear-gradient(
+      180deg,
+      rgba(37, 49, 58, 0.16) 0 4px,
+      transparent 4px 44px
+    ),
     linear-gradient(90deg, #a99a7a, #756a58);
   transform: skewY(33deg);
   transform-origin: left top;
@@ -1057,7 +1080,11 @@ h2 {
   border: 3px solid var(--line);
   border-left: 0;
   background:
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0 5px, transparent 5px 48px),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.3) 0 5px,
+      transparent 5px 48px
+    ),
     linear-gradient(90deg, #9db7c1, #617a86);
   transform: skewY(33deg);
   transform-origin: left top;
@@ -1073,13 +1100,23 @@ h2 {
 .hospital-tower .tower-zone {
   min-height: clamp(112px, 14vh, 152px);
   background:
-    linear-gradient(90deg, rgba(37, 49, 58, 0.14) 0 2px, transparent 2px calc(100% - 2px), rgba(37, 49, 58, 0.14) calc(100% - 2px)),
+    linear-gradient(
+      90deg,
+      rgba(37, 49, 58, 0.14) 0 2px,
+      transparent 2px calc(100% - 2px),
+      rgba(37, 49, 58, 0.14) calc(100% - 2px)
+    ),
     linear-gradient(180deg, #dce8ea 0 66%, #aebfc4 66% 100%);
 }
 
 .hospital-tower .tower-zone:nth-child(odd) {
   background:
-    linear-gradient(90deg, rgba(37, 49, 58, 0.12) 0 2px, transparent 2px calc(100% - 2px), rgba(37, 49, 58, 0.12) calc(100% - 2px)),
+    linear-gradient(
+      90deg,
+      rgba(37, 49, 58, 0.12) 0 2px,
+      transparent 2px calc(100% - 2px),
+      rgba(37, 49, 58, 0.12) calc(100% - 2px)
+    ),
     linear-gradient(180deg, #edf7f8 0 66%, #bed0d5 66% 100%);
 }
 
@@ -1098,7 +1135,11 @@ h2 {
   border: 3px solid #1c4f68;
   border-radius: 12px;
   background:
-    radial-gradient(circle at 18% 18%, rgba(50, 199, 220, 0.22), transparent 24%),
+    radial-gradient(
+      circle at 18% 18%,
+      rgba(50, 199, 220, 0.22),
+      transparent 24%
+    ),
     linear-gradient(135deg, #172838, #0e1722);
   box-shadow: 0 0 34px rgba(50, 199, 220, 0.34);
 }
@@ -1135,8 +1176,16 @@ h2 {
   border: 3px solid #1c4f68;
   border-radius: 10px;
   background:
-    linear-gradient(90deg, rgba(91, 216, 240, 0.12) 0 1px, transparent 1px 60px),
-    linear-gradient(180deg, rgba(91, 216, 240, 0.12) 0 1px, transparent 1px 60px),
+    linear-gradient(
+      90deg,
+      rgba(91, 216, 240, 0.12) 0 1px,
+      transparent 1px 60px
+    ),
+    linear-gradient(
+      180deg,
+      rgba(91, 216, 240, 0.12) 0 1px,
+      transparent 1px 60px
+    ),
     #0b1320;
 }
 
@@ -1146,7 +1195,11 @@ h2 {
   border-radius: 6px;
   background:
     linear-gradient(135deg, rgba(91, 216, 240, 0.11), transparent 42%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 18px),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.08) 0 2px,
+      transparent 2px 18px
+    ),
     #142131;
   color: #dffbff;
   box-shadow: inset 0 0 18px rgba(91, 216, 240, 0.1);
@@ -1157,23 +1210,47 @@ h2 {
 .data-center-tower .tower-zone:nth-child(6n + 5),
 .data-center-tower .tower-zone:nth-child(6n + 6) {
   background:
-    linear-gradient(90deg, transparent 9%, rgba(79, 97, 112, 0.95) 9% 18%, transparent 18% 30%, rgba(79, 97, 112, 0.95) 30% 39%, transparent 39% 61%, rgba(79, 97, 112, 0.95) 61% 70%, transparent 70% 82%, rgba(79, 97, 112, 0.95) 82% 91%, transparent 91%),
-    repeating-linear-gradient(180deg, transparent 0 8px, rgba(47, 209, 124, 0.26) 8px 10px, transparent 10px 18px),
+    linear-gradient(
+      90deg,
+      transparent 9%,
+      rgba(79, 97, 112, 0.95) 9% 18%,
+      transparent 18% 30%,
+      rgba(79, 97, 112, 0.95) 30% 39%,
+      transparent 39% 61%,
+      rgba(79, 97, 112, 0.95) 61% 70%,
+      transparent 70% 82%,
+      rgba(79, 97, 112, 0.95) 82% 91%,
+      transparent 91%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 8px,
+      rgba(47, 209, 124, 0.26) 8px 10px,
+      transparent 10px 18px
+    ),
     #101b2a;
 }
 
 .data-center-tower .tower-zone:nth-child(6n + 3),
 .data-center-tower .tower-zone:nth-child(6n + 4) {
   background:
-    linear-gradient(90deg, transparent 42%, rgba(50, 199, 220, 0.42) 42% 58%, transparent 58%),
-    linear-gradient(180deg, rgba(91, 216, 240, 0.08), transparent),
-    #152537;
+    linear-gradient(
+      90deg,
+      transparent 42%,
+      rgba(50, 199, 220, 0.42) 42% 58%,
+      transparent 58%
+    ),
+    linear-gradient(180deg, rgba(91, 216, 240, 0.08), transparent), #152537;
 }
 
 .data-center-tower .tower-zone:nth-child(odd) {
   background:
     linear-gradient(135deg, rgba(126, 124, 255, 0.12), transparent 42%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 18px),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.07) 0 2px,
+      transparent 2px 18px
+    ),
     #111c2b;
 }
 
@@ -1185,8 +1262,11 @@ h2 {
   height: 10px;
   border: 1px solid rgba(91, 216, 240, 0.45);
   border-radius: 999px;
-  background:
-    linear-gradient(90deg, rgba(91, 216, 240, 0.9), rgba(126, 124, 255, 0.35));
+  background: linear-gradient(
+    90deg,
+    rgba(91, 216, 240, 0.9),
+    rgba(126, 124, 255, 0.35)
+  );
   box-shadow: 0 0 12px rgba(91, 216, 240, 0.38);
 }
 
@@ -1209,8 +1289,16 @@ h2 {
   border: 3px solid #466b34;
   border-radius: 18px;
   background:
-    radial-gradient(circle at 20% 24%, rgba(255, 255, 255, 0.34), transparent 14%),
-    repeating-linear-gradient(35deg, rgba(255, 255, 255, 0.08) 0 8px, transparent 8px 28px),
+    radial-gradient(
+      circle at 20% 24%,
+      rgba(255, 255, 255, 0.34),
+      transparent 14%
+    ),
+    repeating-linear-gradient(
+      35deg,
+      rgba(255, 255, 255, 0.08) 0 8px,
+      transparent 8px 28px
+    ),
     linear-gradient(135deg, #9bc872, #5c9b46);
 }
 
@@ -1245,7 +1333,11 @@ h2 {
   border: 3px solid #466b34;
   border-radius: 16px;
   background:
-    repeating-linear-gradient(28deg, rgba(255, 255, 255, 0.14) 0 3px, transparent 3px 24px),
+    repeating-linear-gradient(
+      28deg,
+      rgba(255, 255, 255, 0.14) 0 3px,
+      transparent 3px 24px
+    ),
     linear-gradient(135deg, #a7d27f, #6cae56);
 }
 
@@ -1255,17 +1347,35 @@ h2 {
   border: 0;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.34) 0 12%, transparent 12%),
-    radial-gradient(circle at 50% 50%, rgba(66, 96, 44, 0.34) 0 40%, transparent 41%),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 255, 255, 0.34) 0 12%,
+      transparent 12%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(66, 96, 44, 0.34) 0 40%,
+      transparent 41%
+    ),
     radial-gradient(circle at 50% 50%, #7fb35d 0 62%, transparent 63%);
   color: #21351d;
-  box-shadow: inset 0 0 16px rgba(39, 67, 31, 0.2), 0 6px 0 rgba(39, 67, 31, 0.18);
+  box-shadow:
+    inset 0 0 16px rgba(39, 67, 31, 0.2),
+    0 6px 0 rgba(39, 67, 31, 0.18);
 }
 
 .wind-farm-tower .tower-zone:nth-child(odd) {
   background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.34) 0 12%, transparent 12%),
-    radial-gradient(circle at 50% 50%, rgba(66, 96, 44, 0.28) 0 40%, transparent 41%),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 255, 255, 0.34) 0 12%,
+      transparent 12%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(66, 96, 44, 0.28) 0 40%,
+      transparent 41%
+    ),
     radial-gradient(circle at 50% 50%, #8ec86b 0 62%, transparent 63%);
 }
 
@@ -1372,7 +1482,11 @@ h2 {
   border: 3px solid #5f6d4b;
   border-radius: 16px;
   background:
-    repeating-linear-gradient(32deg, rgba(255, 255, 255, 0.12) 0 3px, transparent 3px 28px),
+    repeating-linear-gradient(
+      32deg,
+      rgba(255, 255, 255, 0.12) 0 3px,
+      transparent 3px 28px
+    ),
     linear-gradient(135deg, #b3cc84, #719a57);
 }
 
@@ -1382,8 +1496,7 @@ h2 {
   border: 2px solid rgba(65, 77, 48, 0.55);
   border-radius: 10px 16px 9px 18px;
   background:
-    linear-gradient(135deg, rgba(126, 91, 45, 0.22), transparent 46%),
-    #8fbb69;
+    linear-gradient(135deg, rgba(126, 91, 45, 0.22), transparent 46%), #8fbb69;
 }
 
 .housing-tower .tower-zone:nth-child(3n),
@@ -1399,13 +1512,21 @@ h2 {
 
 .solar-farm-tower::before {
   background:
-    radial-gradient(circle at 18% 18%, rgba(255, 245, 180, 0.45), transparent 16%),
+    radial-gradient(
+      circle at 18% 18%,
+      rgba(255, 245, 180, 0.45),
+      transparent 16%
+    ),
     linear-gradient(135deg, #d8c16a, #9eb568);
 }
 
 .solar-farm-tower .level-zones {
   background:
-    repeating-linear-gradient(20deg, rgba(116, 88, 37, 0.16) 0 4px, transparent 4px 30px),
+    repeating-linear-gradient(
+      20deg,
+      rgba(116, 88, 37, 0.16) 0 4px,
+      transparent 4px 30px
+    ),
     linear-gradient(135deg, #d2b95f, #92a85d);
 }
 
@@ -1414,20 +1535,35 @@ h2 {
   border: 0;
   border-radius: 8px;
   background:
-    linear-gradient(90deg, transparent 10%, rgba(29, 95, 159, 0.6) 10% 90%, transparent 90%),
+    linear-gradient(
+      90deg,
+      transparent 10%,
+      rgba(29, 95, 159, 0.6) 10% 90%,
+      transparent 90%
+    ),
     linear-gradient(#a88a42, #8fa05a);
   transform: skewX(-5deg);
 }
 
 .airport-tower::before {
   background:
-    linear-gradient(12deg, transparent 44%, rgba(64, 70, 76, 0.82) 44% 58%, transparent 58%),
+    linear-gradient(
+      12deg,
+      transparent 44%,
+      rgba(64, 70, 76, 0.82) 44% 58%,
+      transparent 58%
+    ),
     linear-gradient(135deg, #9aa686, #6f8664);
 }
 
 .airport-tower .level-zones {
   background:
-    linear-gradient(12deg, transparent 45%, rgba(64, 70, 76, 0.75) 45% 56%, transparent 56%),
+    linear-gradient(
+      12deg,
+      transparent 45%,
+      rgba(64, 70, 76, 0.75) 45% 56%,
+      transparent 56%
+    ),
     linear-gradient(135deg, #9aa686, #6f8664);
 }
 
@@ -1436,7 +1572,12 @@ h2 {
   border: 2px solid rgba(35, 40, 45, 0.45);
   border-radius: 6px 16px 6px 16px;
   background:
-    linear-gradient(90deg, transparent 42%, rgba(90, 96, 102, 0.55) 42% 58%, transparent 58%),
+    linear-gradient(
+      90deg,
+      transparent 42%,
+      rgba(90, 96, 102, 0.55) 42% 58%,
+      transparent 58%
+    ),
     #a5b08f;
 }
 
@@ -1478,13 +1619,23 @@ h2 {
 .hotel-interiors-tower .tower-zone {
   min-height: clamp(82px, 10vh, 112px);
   background:
-    linear-gradient(90deg, rgba(37, 49, 58, 0.16) 0 2px, transparent 2px calc(100% - 2px), rgba(37, 49, 58, 0.16) calc(100% - 2px)),
+    linear-gradient(
+      90deg,
+      rgba(37, 49, 58, 0.16) 0 2px,
+      transparent 2px calc(100% - 2px),
+      rgba(37, 49, 58, 0.16) calc(100% - 2px)
+    ),
     linear-gradient(180deg, #d8dee3 0 66%, #aeb7bf 66% 100%);
 }
 
 .hotel-interiors-tower .tower-zone:nth-child(odd) {
   background:
-    linear-gradient(90deg, rgba(120, 183, 232, 0.18) 0 2px, transparent 2px calc(100% - 2px), rgba(120, 183, 232, 0.18) calc(100% - 2px)),
+    linear-gradient(
+      90deg,
+      rgba(120, 183, 232, 0.18) 0 2px,
+      transparent 2px calc(100% - 2px),
+      rgba(120, 183, 232, 0.18) calc(100% - 2px)
+    ),
     linear-gradient(180deg, #eef1f4 0 66%, #c5d0dc 66% 100%);
 }
 
@@ -1523,8 +1674,17 @@ h2 {
   border-radius: 0;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.38), transparent 24%),
-    linear-gradient(90deg, rgba(37, 49, 58, 0.16) 0 2px, transparent 2px calc(100% - 2px), rgba(37, 49, 58, 0.16) calc(100% - 2px)),
-    repeating-linear-gradient(90deg, transparent 0 32px, rgba(37, 49, 58, 0.05) 32px 35px),
+    linear-gradient(
+      90deg,
+      rgba(37, 49, 58, 0.16) 0 2px,
+      transparent 2px calc(100% - 2px),
+      rgba(37, 49, 58, 0.16) calc(100% - 2px)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 32px,
+      rgba(37, 49, 58, 0.05) 32px 35px
+    ),
     linear-gradient(180deg, #e4ddd0 0 66%, #b6a896 66% 100%);
   box-shadow:
     inset 0 7px rgba(255, 255, 255, 0.18),
@@ -1537,8 +1697,17 @@ h2 {
 .tower-zone:nth-child(odd) {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 24%),
-    linear-gradient(90deg, rgba(37, 49, 58, 0.14) 0 2px, transparent 2px calc(100% - 2px), rgba(37, 49, 58, 0.14) calc(100% - 2px)),
-    repeating-linear-gradient(90deg, transparent 0 32px, rgba(37, 49, 58, 0.045) 32px 35px),
+    linear-gradient(
+      90deg,
+      rgba(37, 49, 58, 0.14) 0 2px,
+      transparent 2px calc(100% - 2px),
+      rgba(37, 49, 58, 0.14) calc(100% - 2px)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 32px,
+      rgba(37, 49, 58, 0.045) 32px 35px
+    ),
     linear-gradient(180deg, #d6d1c7 0 66%, #aa9d8a 66% 100%);
 }
 
@@ -1551,7 +1720,12 @@ h2 {
   height: 24px;
   border: 2px solid rgba(37, 49, 58, 0.4);
   background:
-    linear-gradient(90deg, transparent calc(50% - 1px), rgba(37, 49, 58, 0.35) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(
+      90deg,
+      transparent calc(50% - 1px),
+      rgba(37, 49, 58, 0.35) calc(50% - 1px) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    ),
     linear-gradient(#bfe8ff, #75bce8);
   box-shadow: inset 0 8px rgba(255, 255, 255, 0.45);
 }
@@ -1603,22 +1777,30 @@ h2 {
   background-position: center;
   background-size: 82% 82%;
   opacity: 0.96;
-  filter:
-    drop-shadow(0 2px 0 rgba(255, 255, 255, 0.26))
+  filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.26))
     drop-shadow(0 6px 0 rgba(29, 38, 48, 0.08));
   pointer-events: none;
 }
 
 .work-layer.active-work {
-  filter:
-    drop-shadow(0 0 8px rgba(255, 255, 255, 0.58))
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.58))
     drop-shadow(0 6px 0 rgba(29, 38, 48, 0.14));
 }
 
 .work-layer.work-framing {
   background:
-    repeating-linear-gradient(90deg, transparent 0 14px, rgba(104, 119, 131, 0.95) 14px 18px, transparent 18px 28px),
-    linear-gradient(180deg, transparent 0 18px, rgba(104, 119, 131, 0.8) 18px 22px, transparent 22px 100%);
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 14px,
+      rgba(104, 119, 131, 0.95) 14px 18px,
+      transparent 18px 28px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 18px,
+      rgba(104, 119, 131, 0.8) 18px 22px,
+      transparent 22px 100%
+    );
   clip-path: polygon(8% 21%, 92% 21%, 92% 72%, 8% 72%);
 }
 
@@ -1642,8 +1824,18 @@ h2 {
 
 .work-layer.work-electrical {
   background:
-    radial-gradient(circle at 24% 51%, #fff 0 4px, #1d2630 4px 7px, transparent 7px),
-    radial-gradient(circle at 76% 51%, #fff 0 4px, #1d2630 4px 7px, transparent 7px),
+    radial-gradient(
+      circle at 24% 51%,
+      #fff 0 4px,
+      #1d2630 4px 7px,
+      transparent 7px
+    ),
+    radial-gradient(
+      circle at 76% 51%,
+      #fff 0 4px,
+      #1d2630 4px 7px,
+      transparent 7px
+    ),
     linear-gradient(16deg, transparent 43%, #e34242 43% 46%, transparent 46%),
     linear-gradient(-13deg, transparent 47%, #236ee8 47% 50%, transparent 50%),
     linear-gradient(3deg, transparent 54%, #f3c537 54% 57%, transparent 57%);
@@ -1657,17 +1849,41 @@ h2 {
   top: 39%;
   width: 54%;
   height: 3px;
-  background: repeating-linear-gradient(90deg, #e34242 0 12px, #236ee8 12px 24px, #f3c537 24px 36px);
+  background: repeating-linear-gradient(
+    90deg,
+    #e34242 0 12px,
+    #236ee8 12px 24px,
+    #f3c537 24px 36px
+  );
   box-shadow: 0 8px 0 rgba(35, 110, 232, 0.9);
   animation: wire-pull 0.72s ease-in-out infinite alternate;
 }
 
 .work-layer.work-plumbing {
   background:
-    linear-gradient(90deg, transparent 12%, #2388d1 12% 16%, #d44b3d 16% 20%, #e7c94a 20% 24%, transparent 24%),
-    linear-gradient(90deg, transparent 72%, #2388d1 72% 76%, #d44b3d 76% 80%, #e7c94a 80% 84%, transparent 84%),
+    linear-gradient(
+      90deg,
+      transparent 12%,
+      #2388d1 12% 16%,
+      #d44b3d 16% 20%,
+      #e7c94a 20% 24%,
+      transparent 24%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 72%,
+      #2388d1 72% 76%,
+      #d44b3d 76% 80%,
+      #e7c94a 80% 84%,
+      transparent 84%
+    ),
     linear-gradient(180deg, transparent 48%, #2388d1 48% 54%, transparent 54%),
-    radial-gradient(circle at 74% 51%, #d9f4ff 0 5px, #2388d1 5px 9px, transparent 9px);
+    radial-gradient(
+      circle at 74% 51%,
+      #d9f4ff 0 5px,
+      #2388d1 5px 9px,
+      transparent 9px
+    );
   clip-path: polygon(7% 25%, 93% 25%, 93% 73%, 7% 73%);
 }
 
@@ -1690,10 +1906,28 @@ h2 {
 
 .work-layer.work-drywall {
   background:
-    radial-gradient(circle at 22% 34%, rgba(37, 49, 58, 0.55) 0 2px, transparent 2px),
-    radial-gradient(circle at 48% 35%, rgba(37, 49, 58, 0.55) 0 2px, transparent 2px),
-    radial-gradient(circle at 74% 34%, rgba(37, 49, 58, 0.55) 0 2px, transparent 2px),
-    linear-gradient(90deg, rgba(37, 49, 58, 0.18) 0 2px, transparent 2px 50%, rgba(37, 49, 58, 0.18) 50% calc(50% + 2px), transparent calc(50% + 2px)),
+    radial-gradient(
+      circle at 22% 34%,
+      rgba(37, 49, 58, 0.55) 0 2px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 48% 35%,
+      rgba(37, 49, 58, 0.55) 0 2px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 74% 34%,
+      rgba(37, 49, 58, 0.55) 0 2px,
+      transparent 2px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(37, 49, 58, 0.18) 0 2px,
+      transparent 2px 50%,
+      rgba(37, 49, 58, 0.18) 50% calc(50% + 2px),
+      transparent calc(50% + 2px)
+    ),
     linear-gradient(#e9e5dc 0 66%, transparent 66%);
 }
 
@@ -1712,7 +1946,14 @@ h2 {
 
 .work-layer.work-painting {
   background:
-    linear-gradient(100deg, transparent 0 18%, rgba(255, 255, 255, 0.28) 18% 22%, transparent 22% 38%, rgba(255, 255, 255, 0.25) 38% 42%, transparent 42%),
+    linear-gradient(
+      100deg,
+      transparent 0 18%,
+      rgba(255, 255, 255, 0.28) 18% 22%,
+      transparent 22% 38%,
+      rgba(255, 255, 255, 0.25) 38% 42%,
+      transparent 42%
+    ),
     linear-gradient(#b8dcf2 0 66%, transparent 66%);
 }
 
@@ -1735,10 +1976,20 @@ h2 {
 
 .work-layer.work-finishes {
   background:
-    radial-gradient(circle at 50% 18%, #fff6ba 0 7px, #d5bc55 7px 10px, transparent 10px),
+    radial-gradient(
+      circle at 50% 18%,
+      #fff6ba 0 7px,
+      #d5bc55 7px 10px,
+      transparent 10px
+    ),
     linear-gradient(90deg, transparent 66%, #7f6749 66% 82%, transparent 82%),
     radial-gradient(circle at 75% 50%, #f7d87a 0 3px, transparent 3px),
-    radial-gradient(circle at 24% 53%, #fff 0 5px, #1d2630 5px 7px, transparent 7px);
+    radial-gradient(
+      circle at 24% 53%,
+      #fff 0 5px,
+      #1d2630 5px 7px,
+      transparent 7px
+    );
 }
 
 .work-layer.work-finishes.active-work::after {
@@ -1757,7 +2008,12 @@ h2 {
 .work-layer.work-hvac {
   background:
     linear-gradient(90deg, transparent 8%, #b7c4cb 8% 86%, transparent 86%),
-    repeating-linear-gradient(90deg, transparent 0 18px, rgba(37, 49, 58, 0.38) 18px 21px, transparent 21px 36px);
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 18px,
+      rgba(37, 49, 58, 0.38) 18px 21px,
+      transparent 21px 36px
+    );
   clip-path: polygon(8% 13%, 92% 13%, 92% 28%, 8% 28%);
 }
 
@@ -1804,7 +2060,13 @@ h2 {
 
 .work-layer.work-cleanroom {
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.42) 0 10%, transparent 10% 28%, rgba(255, 255, 255, 0.36) 28% 36%, transparent 36%),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.42) 0 10%,
+      transparent 10% 28%,
+      rgba(255, 255, 255, 0.36) 28% 36%,
+      transparent 36%
+    ),
     linear-gradient(#d8fbff 0 66%, transparent 66%);
 }
 
@@ -1814,7 +2076,9 @@ h2 {
   inset: 22% 10% 36%;
   border: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: 5px;
-  box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.85), 0 0 22px rgba(168, 231, 240, 0.8);
+  box-shadow:
+    inset 0 0 18px rgba(255, 255, 255, 0.85),
+    0 0 22px rgba(168, 231, 240, 0.8);
 }
 
 .work-layer.work-cleanroom.active-work::after {
@@ -1824,7 +2088,13 @@ h2 {
 .work-layer.work-equipment {
   background:
     linear-gradient(90deg, transparent 16%, #e9f3fb 16% 46%, transparent 46%),
-    radial-gradient(circle at 62% 47%, #111820 0 4px, #70d4ff 4px 12px, #111820 12px 15px, transparent 15px),
+    radial-gradient(
+      circle at 62% 47%,
+      #111820 0 4px,
+      #70d4ff 4px 12px,
+      #111820 12px 15px,
+      transparent 15px
+    ),
     linear-gradient(90deg, transparent 58%, #cad3db 58% 63%, transparent 63%),
     radial-gradient(circle at 30% 66%, #1d2630 0 4px, transparent 4px),
     radial-gradient(circle at 43% 66%, #1d2630 0 4px, transparent 4px);
@@ -1848,8 +2118,22 @@ h2 {
 
 .work-layer.work-raised-floor {
   background:
-    linear-gradient(90deg, rgba(180, 196, 208, 0.78) 0 2px, transparent 2px 33.33%, rgba(180, 196, 208, 0.78) 33.33% calc(33.33% + 2px), transparent calc(33.33% + 2px) 66.66%, rgba(180, 196, 208, 0.78) 66.66% calc(66.66% + 2px), transparent calc(66.66% + 2px)),
-    linear-gradient(180deg, rgba(180, 196, 208, 0.78) 0 2px, transparent 2px 50%, rgba(180, 196, 208, 0.78) 50% calc(50% + 2px), transparent calc(50% + 2px)),
+    linear-gradient(
+      90deg,
+      rgba(180, 196, 208, 0.78) 0 2px,
+      transparent 2px 33.33%,
+      rgba(180, 196, 208, 0.78) 33.33% calc(33.33% + 2px),
+      transparent calc(33.33% + 2px) 66.66%,
+      rgba(180, 196, 208, 0.78) 66.66% calc(66.66% + 2px),
+      transparent calc(66.66% + 2px)
+    ),
+    linear-gradient(
+      180deg,
+      rgba(180, 196, 208, 0.78) 0 2px,
+      transparent 2px 50%,
+      rgba(180, 196, 208, 0.78) 50% calc(50% + 2px),
+      transparent calc(50% + 2px)
+    ),
     linear-gradient(rgba(138, 151, 163, 0.36), rgba(138, 151, 163, 0.2));
 }
 
@@ -1867,10 +2151,32 @@ h2 {
 
 .work-layer.work-power {
   background:
-    radial-gradient(circle at 22% 32%, #fff4a3 0 4px, #ffd84d 4px 9px, transparent 9px),
-    radial-gradient(circle at 78% 32%, #fff4a3 0 4px, #ffd84d 4px 9px, transparent 9px),
-    linear-gradient(90deg, transparent 14%, #ffd84d 14% 18%, transparent 18% 82%, #ffd84d 82% 86%, transparent 86%),
-    linear-gradient(180deg, transparent 42%, rgba(255, 216, 77, 0.82) 42% 47%, transparent 47%);
+    radial-gradient(
+      circle at 22% 32%,
+      #fff4a3 0 4px,
+      #ffd84d 4px 9px,
+      transparent 9px
+    ),
+    radial-gradient(
+      circle at 78% 32%,
+      #fff4a3 0 4px,
+      #ffd84d 4px 9px,
+      transparent 9px
+    ),
+    linear-gradient(
+      90deg,
+      transparent 14%,
+      #ffd84d 14% 18%,
+      transparent 18% 82%,
+      #ffd84d 82% 86%,
+      transparent 86%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 42%,
+      rgba(255, 216, 77, 0.82) 42% 47%,
+      transparent 47%
+    );
   filter: drop-shadow(0 0 7px rgba(255, 216, 77, 0.45));
 }
 
@@ -1889,16 +2195,45 @@ h2 {
 
 .work-layer.work-backup-power {
   background:
-    linear-gradient(90deg, transparent 12%, #ff8a2a 12% 30%, transparent 30% 70%, #ff8a2a 70% 88%, transparent 88%),
-    radial-gradient(circle at 22% 58%, #ffe1b8 0 5px, #ff8a2a 5px 13px, transparent 13px),
-    radial-gradient(circle at 78% 58%, #ffe1b8 0 5px, #ff8a2a 5px 13px, transparent 13px);
+    linear-gradient(
+      90deg,
+      transparent 12%,
+      #ff8a2a 12% 30%,
+      transparent 30% 70%,
+      #ff8a2a 70% 88%,
+      transparent 88%
+    ),
+    radial-gradient(
+      circle at 22% 58%,
+      #ffe1b8 0 5px,
+      #ff8a2a 5px 13px,
+      transparent 13px
+    ),
+    radial-gradient(
+      circle at 78% 58%,
+      #ffe1b8 0 5px,
+      #ff8a2a 5px 13px,
+      transparent 13px
+    );
   filter: drop-shadow(0 0 8px rgba(255, 138, 42, 0.42));
 }
 
 .work-layer.work-cooling {
   background:
-    linear-gradient(90deg, transparent 8%, rgba(50, 199, 220, 0.78) 8% 14%, transparent 14% 86%, rgba(50, 199, 220, 0.78) 86% 92%, transparent 92%),
-    repeating-linear-gradient(180deg, transparent 0 8px, rgba(50, 199, 220, 0.42) 8px 11px, transparent 11px 22px);
+    linear-gradient(
+      90deg,
+      transparent 8%,
+      rgba(50, 199, 220, 0.78) 8% 14%,
+      transparent 14% 86%,
+      rgba(50, 199, 220, 0.78) 86% 92%,
+      transparent 92%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 8px,
+      rgba(50, 199, 220, 0.42) 8px 11px,
+      transparent 11px 22px
+    );
 }
 
 .work-layer.work-cooling.active-work::after {
@@ -1925,15 +2260,33 @@ h2 {
   top: 35%;
   width: 72%;
   height: 3px;
-  background: repeating-linear-gradient(90deg, #7d7cff 0 10px, #50e3ff 10px 20px);
+  background: repeating-linear-gradient(
+    90deg,
+    #7d7cff 0 10px,
+    #50e3ff 10px 20px
+  );
   box-shadow: 0 0 10px rgba(126, 124, 255, 0.7);
   animation: wire-pull 0.65s ease-in-out infinite alternate;
 }
 
 .work-layer.work-rack-install {
   background:
-    linear-gradient(90deg, transparent 16%, #4f6170 16% 28%, transparent 28% 44%, #4f6170 44% 56%, transparent 56% 72%, #4f6170 72% 84%, transparent 84%),
-    repeating-linear-gradient(180deg, transparent 0 7px, rgba(255, 255, 255, 0.22) 7px 9px, transparent 9px 16px);
+    linear-gradient(
+      90deg,
+      transparent 16%,
+      #4f6170 16% 28%,
+      transparent 28% 44%,
+      #4f6170 44% 56%,
+      transparent 56% 72%,
+      #4f6170 72% 84%,
+      transparent 84%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 7px,
+      rgba(255, 255, 255, 0.22) 7px 9px,
+      transparent 9px 16px
+    );
 }
 
 .work-layer.work-rack-install.active-work::after {
@@ -1950,8 +2303,22 @@ h2 {
 
 .work-layer.work-server-equipment {
   background:
-    linear-gradient(90deg, transparent 16%, rgba(47, 209, 124, 0.24) 16% 28%, transparent 28% 44%, rgba(47, 209, 124, 0.24) 44% 56%, transparent 56% 72%, rgba(47, 209, 124, 0.24) 72% 84%, transparent 84%),
-    repeating-linear-gradient(180deg, transparent 0 7px, rgba(47, 209, 124, 0.86) 7px 9px, transparent 9px 16px);
+    linear-gradient(
+      90deg,
+      transparent 16%,
+      rgba(47, 209, 124, 0.24) 16% 28%,
+      transparent 28% 44%,
+      rgba(47, 209, 124, 0.24) 44% 56%,
+      transparent 56% 72%,
+      rgba(47, 209, 124, 0.24) 72% 84%,
+      transparent 84%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 7px,
+      rgba(47, 209, 124, 0.86) 7px 9px,
+      transparent 9px 16px
+    );
   filter: drop-shadow(0 0 8px rgba(47, 209, 124, 0.45));
 }
 
@@ -1959,16 +2326,34 @@ h2 {
   content: "";
   position: absolute;
   inset: 26% 24%;
-  background: repeating-linear-gradient(90deg, #2fd17c 0 4px, transparent 4px 10px);
+  background: repeating-linear-gradient(
+    90deg,
+    #2fd17c 0 4px,
+    transparent 4px 10px
+  );
   box-shadow: 0 0 18px rgba(47, 209, 124, 0.72);
   animation: server-blink 0.38s steps(2, jump-none) infinite;
 }
 
 .work-layer.work-commissioning {
   background:
-    radial-gradient(circle at 50% 47%, rgba(214, 109, 255, 0.88) 0 5px, transparent 5px),
-    linear-gradient(45deg, transparent 47%, rgba(214, 109, 255, 0.72) 47% 50%, transparent 50%),
-    linear-gradient(-45deg, transparent 47%, rgba(91, 216, 240, 0.7) 47% 50%, transparent 50%);
+    radial-gradient(
+      circle at 50% 47%,
+      rgba(214, 109, 255, 0.88) 0 5px,
+      transparent 5px
+    ),
+    linear-gradient(
+      45deg,
+      transparent 47%,
+      rgba(214, 109, 255, 0.72) 47% 50%,
+      transparent 50%
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 47%,
+      rgba(91, 216, 240, 0.7) 47% 50%,
+      transparent 50%
+    );
   filter: drop-shadow(0 0 10px rgba(214, 109, 255, 0.5));
 }
 
@@ -1984,8 +2369,18 @@ h2 {
 
 .work-layer.work-access-roads {
   background:
-    linear-gradient(145deg, transparent 42%, rgba(126, 91, 45, 0.72) 42% 50%, transparent 50%),
-    linear-gradient(18deg, transparent 56%, rgba(126, 91, 45, 0.52) 56% 61%, transparent 61%);
+    linear-gradient(
+      145deg,
+      transparent 42%,
+      rgba(126, 91, 45, 0.72) 42% 50%,
+      transparent 50%
+    ),
+    linear-gradient(
+      18deg,
+      transparent 56%,
+      rgba(126, 91, 45, 0.52) 56% 61%,
+      transparent 61%
+    );
 }
 
 .work-layer.work-access-roads.active-work::after {
@@ -2001,8 +2396,12 @@ h2 {
 }
 
 .work-layer.work-turbine-foundation {
-  background:
-    radial-gradient(circle at 50% 50%, #c4c8ca 0 18%, #8d9298 18% 28%, transparent 29%);
+  background: radial-gradient(
+    circle at 50% 50%,
+    #c4c8ca 0 18%,
+    #8d9298 18% 28%,
+    transparent 29%
+  );
 }
 
 .work-layer.work-turbine-foundation.active-work::after {
@@ -2038,7 +2437,12 @@ h2 {
 .work-layer.work-nacelle-install {
   background:
     linear-gradient(90deg, transparent 46%, #d7dde4 46% 54%, transparent 54%),
-    radial-gradient(ellipse at 50% 24%, #dff0ff 0 13%, #8bc4ff 13% 21%, transparent 22%),
+    radial-gradient(
+      ellipse at 50% 24%,
+      #dff0ff 0 13%,
+      #8bc4ff 13% 21%,
+      transparent 22%
+    ),
     radial-gradient(circle at 50% 74%, #8d9298 0 13%, transparent 14%);
 }
 
@@ -2057,8 +2461,22 @@ h2 {
 .work-layer.work-blade-install {
   background:
     linear-gradient(90deg, transparent 46%, #d7dde4 46% 54%, transparent 54%),
-    radial-gradient(ellipse at 50% 24%, #dff0ff 0 13%, #8bc4ff 13% 21%, transparent 22%),
-    conic-gradient(from 12deg at 50% 24%, transparent 0 5%, #f5f7fb 5% 9%, transparent 9% 37%, #f5f7fb 37% 41%, transparent 41% 69%, #f5f7fb 69% 73%, transparent 73%),
+    radial-gradient(
+      ellipse at 50% 24%,
+      #dff0ff 0 13%,
+      #8bc4ff 13% 21%,
+      transparent 22%
+    ),
+    conic-gradient(
+      from 12deg at 50% 24%,
+      transparent 0 5%,
+      #f5f7fb 5% 9%,
+      transparent 9% 37%,
+      #f5f7fb 37% 41%,
+      transparent 41% 69%,
+      #f5f7fb 69% 73%,
+      transparent 73%
+    ),
     radial-gradient(circle at 50% 74%, #8d9298 0 13%, transparent 14%);
 }
 
@@ -2066,7 +2484,16 @@ h2 {
   content: "";
   position: absolute;
   inset: 5% 24% 48%;
-  background: conic-gradient(from 0deg, transparent 0 5%, rgba(255, 255, 255, 0.95) 5% 9%, transparent 9% 37%, rgba(255, 255, 255, 0.95) 37% 41%, transparent 41% 69%, rgba(255, 255, 255, 0.95) 69% 73%, transparent 73%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 5%,
+    rgba(255, 255, 255, 0.95) 5% 9%,
+    transparent 9% 37%,
+    rgba(255, 255, 255, 0.95) 37% 41%,
+    transparent 41% 69%,
+    rgba(255, 255, 255, 0.95) 69% 73%,
+    transparent 73%
+  );
   animation: turbine-spin 1.4s linear infinite;
 }
 
@@ -2080,14 +2507,28 @@ h2 {
 .work-layer.work-substation {
   background:
     linear-gradient(90deg, transparent 34%, #b583e8 34% 66%, transparent 66%),
-    repeating-linear-gradient(0deg, transparent 0 8px, rgba(255, 255, 255, 0.35) 8px 10px, transparent 10px 18px);
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 8px,
+      rgba(255, 255, 255, 0.35) 8px 10px,
+      transparent 10px 18px
+    );
   clip-path: polygon(30% 40%, 70% 40%, 70% 70%, 30% 70%);
 }
 
 .work-layer.work-wind-commissioning {
   background:
-    radial-gradient(circle at 50% 24%, rgba(74, 199, 123, 0.9) 0 6px, transparent 6px),
-    radial-gradient(circle at 50% 24%, transparent 0 20%, rgba(74, 199, 123, 0.35) 20% 24%, transparent 24%);
+    radial-gradient(
+      circle at 50% 24%,
+      rgba(74, 199, 123, 0.9) 0 6px,
+      transparent 6px
+    ),
+    radial-gradient(
+      circle at 50% 24%,
+      transparent 0 20%,
+      rgba(74, 199, 123, 0.35) 20% 24%,
+      transparent 24%
+    );
   filter: drop-shadow(0 0 10px rgba(74, 199, 123, 0.7));
 }
 
@@ -2103,8 +2544,17 @@ h2 {
 .work-layer.work-sitework,
 .work-layer.work-earthwork {
   background:
-    linear-gradient(145deg, transparent 42%, rgba(126, 91, 45, 0.72) 42% 50%, transparent 50%),
-    radial-gradient(circle at 32% 58%, rgba(92, 65, 34, 0.35) 0 12%, transparent 13%);
+    linear-gradient(
+      145deg,
+      transparent 42%,
+      rgba(126, 91, 45, 0.72) 42% 50%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 32% 58%,
+      rgba(92, 65, 34, 0.35) 0 12%,
+      transparent 13%
+    );
 }
 
 .work-layer.work-utilities,
@@ -2118,15 +2568,31 @@ h2 {
 .work-layer.work-slab-foundation,
 .work-layer.work-deep-foundations {
   background:
-    radial-gradient(ellipse at 50% 58%, rgba(180, 184, 188, 0.9) 0 32%, transparent 33%),
-    linear-gradient(180deg, transparent 48%, rgba(141, 146, 152, 0.65) 48% 66%, transparent 66%);
+    radial-gradient(
+      ellipse at 50% 58%,
+      rgba(180, 184, 188, 0.9) 0 32%,
+      transparent 33%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 48%,
+      rgba(141, 146, 152, 0.65) 48% 66%,
+      transparent 66%
+    );
 }
 
 .work-layer.work-house-framing {
   background:
     linear-gradient(35deg, transparent 42%, #c58a4a 42% 48%, transparent 48%),
     linear-gradient(-35deg, transparent 42%, #c58a4a 42% 48%, transparent 48%),
-    linear-gradient(90deg, transparent 22%, #c58a4a 22% 28%, transparent 28% 72%, #c58a4a 72% 78%, transparent 78%);
+    linear-gradient(
+      90deg,
+      transparent 22%,
+      #c58a4a 22% 28%,
+      transparent 28% 72%,
+      #c58a4a 72% 78%,
+      transparent 78%
+    );
   clip-path: polygon(18% 28%, 50% 10%, 82% 28%, 82% 74%, 18% 74%);
 }
 
@@ -2142,7 +2608,12 @@ h2 {
   background:
     linear-gradient(18deg, transparent 38%, #f3c537 38% 42%, transparent 42%),
     linear-gradient(-18deg, transparent 48%, #2388d1 48% 52%, transparent 52%),
-    radial-gradient(circle at 30% 48%, #fff 0 4px, #1d2630 4px 7px, transparent 7px);
+    radial-gradient(
+      circle at 30% 48%,
+      #fff 0 4px,
+      #1d2630 4px 7px,
+      transparent 7px
+    );
 }
 
 .work-layer.work-home-finishes,
@@ -2155,19 +2626,44 @@ h2 {
 }
 
 .work-layer.work-pile-driving {
-  background:
-    linear-gradient(90deg, transparent 24%, #8d9298 24% 30%, transparent 30% 48%, #8d9298 48% 54%, transparent 54% 72%, #8d9298 72% 78%, transparent 78%);
+  background: linear-gradient(
+    90deg,
+    transparent 24%,
+    #8d9298 24% 30%,
+    transparent 30% 48%,
+    #8d9298 48% 54%,
+    transparent 54% 72%,
+    #8d9298 72% 78%,
+    transparent 78%
+  );
 }
 
 .work-layer.work-solar-racking {
   background:
-    repeating-linear-gradient(90deg, transparent 0 16px, #6f8796 16px 20px, transparent 20px 36px),
-    linear-gradient(180deg, transparent 35%, #6f8796 35% 41%, transparent 41% 62%, #6f8796 62% 68%, transparent 68%);
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 16px,
+      #6f8796 16px 20px,
+      transparent 20px 36px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 35%,
+      #6f8796 35% 41%,
+      transparent 41% 62%,
+      #6f8796 62% 68%,
+      transparent 68%
+    );
 }
 
 .work-layer.work-solar-panels {
   background:
-    repeating-linear-gradient(90deg, #1d5f9f 0 16px, #17466f 16px 18px, #1d5f9f 18px 34px),
+    repeating-linear-gradient(
+      90deg,
+      #1d5f9f 0 16px,
+      #17466f 16px 18px,
+      #1d5f9f 18px 34px
+    ),
     linear-gradient(#243f68, #122a47);
   clip-path: polygon(12% 28%, 88% 20%, 88% 70%, 12% 78%);
   filter: drop-shadow(0 0 8px rgba(29, 95, 159, 0.5));
@@ -2178,7 +2674,12 @@ h2 {
 .work-layer.work-substation {
   background:
     linear-gradient(90deg, transparent 34%, #b583e8 34% 66%, transparent 66%),
-    repeating-linear-gradient(0deg, transparent 0 8px, rgba(255, 255, 255, 0.35) 8px 10px, transparent 10px 18px);
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 8px,
+      rgba(255, 255, 255, 0.35) 8px 10px,
+      transparent 10px 18px
+    );
   clip-path: polygon(30% 40%, 70% 40%, 70% 70%, 30% 70%);
 }
 
@@ -2188,28 +2689,57 @@ h2 {
 .work-layer.work-skin-inspection,
 .work-layer.work-final-inspection {
   background:
-    radial-gradient(circle at 50% 47%, rgba(74, 199, 123, 0.88) 0 5px, transparent 5px),
-    radial-gradient(circle at 50% 47%, transparent 0 20%, rgba(74, 199, 123, 0.35) 20% 24%, transparent 24%);
+    radial-gradient(
+      circle at 50% 47%,
+      rgba(74, 199, 123, 0.88) 0 5px,
+      transparent 5px
+    ),
+    radial-gradient(
+      circle at 50% 47%,
+      transparent 0 20%,
+      rgba(74, 199, 123, 0.35) 20% 24%,
+      transparent 24%
+    );
   filter: drop-shadow(0 0 10px rgba(74, 199, 123, 0.5));
 }
 
 .work-layer.work-paving {
   background:
     linear-gradient(12deg, transparent 34%, #5a6066 34% 66%, transparent 66%),
-    repeating-linear-gradient(12deg, transparent 0 22px, rgba(255, 255, 255, 0.75) 22px 26px, transparent 26px 44px);
+    repeating-linear-gradient(
+      12deg,
+      transparent 0 22px,
+      rgba(255, 255, 255, 0.75) 22px 26px,
+      transparent 26px 44px
+    );
 }
 
 .work-layer.work-terminal-structure,
 .work-layer.work-structure {
   background:
-    repeating-linear-gradient(90deg, transparent 0 18px, rgba(125, 135, 144, 0.92) 18px 23px, transparent 23px 40px),
-    linear-gradient(180deg, transparent 0 24px, rgba(125, 135, 144, 0.85) 24px 30px, transparent 30px 100%);
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 18px,
+      rgba(125, 135, 144, 0.92) 18px 23px,
+      transparent 23px 40px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 24px,
+      rgba(125, 135, 144, 0.85) 24px 30px,
+      transparent 30px 100%
+    );
 }
 
 .work-layer.work-baggage {
   background:
     linear-gradient(90deg, transparent 12%, #32c7dc 12% 88%, transparent 88%),
-    repeating-linear-gradient(90deg, transparent 0 14px, rgba(17, 24, 32, 0.45) 14px 18px, transparent 18px 34px);
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 14px,
+      rgba(17, 24, 32, 0.45) 14px 18px,
+      transparent 18px 34px
+    );
   clip-path: polygon(8% 45%, 92% 45%, 92% 56%, 8% 56%);
 }
 
@@ -2230,14 +2760,28 @@ h2 {
 .work-layer.work-waterproofing,
 .work-layer.work-skin {
   background:
-    linear-gradient(90deg, rgba(120, 183, 232, 0.45) 0 12%, transparent 12% 24%, rgba(120, 183, 232, 0.45) 24% 36%, transparent 36%),
+    linear-gradient(
+      90deg,
+      rgba(120, 183, 232, 0.45) 0 12%,
+      transparent 12% 24%,
+      rgba(120, 183, 232, 0.45) 24% 36%,
+      transparent 36%
+    ),
     linear-gradient(#cfe8f7 0 66%, transparent 66%);
 }
 
 .work-layer.work-tile {
   background:
-    repeating-linear-gradient(90deg, rgba(120, 183, 232, 0.45) 0 14px, rgba(255, 255, 255, 0.55) 14px 16px),
-    repeating-linear-gradient(180deg, transparent 0 14px, rgba(255, 255, 255, 0.55) 14px 16px);
+    repeating-linear-gradient(
+      90deg,
+      rgba(120, 183, 232, 0.45) 0 14px,
+      rgba(255, 255, 255, 0.55) 14px 16px
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 14px,
+      rgba(255, 255, 255, 0.55) 14px 16px
+    );
 }
 
 .work-stack {
@@ -2265,8 +2809,7 @@ h2 {
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  filter:
-    drop-shadow(0 5px 0 rgba(29, 38, 48, 0.56))
+  filter: drop-shadow(0 5px 0 rgba(29, 38, 48, 0.56))
     drop-shadow(0 0 10px rgba(255, 255, 255, 0.72))
     drop-shadow(0 0 6px var(--trade-color));
   color: #111;
@@ -2288,19 +2831,27 @@ h2 {
 }
 
 .worker.entered-from-left {
-  animation: worker-enter-left 0.26s ease-out both, work-bob 0.72s 0.26s ease-in-out infinite alternate;
+  animation:
+    worker-enter-left 0.26s ease-out both,
+    work-bob 0.72s 0.26s ease-in-out infinite alternate;
 }
 
 .worker.entered-from-right {
-  animation: worker-enter-right 0.26s ease-out both, work-bob 0.72s 0.26s ease-in-out infinite alternate;
+  animation:
+    worker-enter-right 0.26s ease-out both,
+    work-bob 0.72s 0.26s ease-in-out infinite alternate;
 }
 
 .worker.entered-from-up {
-  animation: worker-enter-up 0.26s ease-out both, work-bob 0.72s 0.26s ease-in-out infinite alternate;
+  animation:
+    worker-enter-up 0.26s ease-out both,
+    work-bob 0.72s 0.26s ease-in-out infinite alternate;
 }
 
 .worker.entered-from-down {
-  animation: worker-enter-down 0.26s ease-out both, work-bob 0.72s 0.26s ease-in-out infinite alternate;
+  animation:
+    worker-enter-down 0.26s ease-out both,
+    work-bob 0.72s 0.26s ease-in-out infinite alternate;
 }
 
 .worker span {
@@ -2369,8 +2920,18 @@ h2 {
   border: 2px solid var(--line);
   border-radius: 6px 6px 3px 3px;
   background:
-    linear-gradient(70deg, transparent 0 42%, rgba(255, 255, 255, 0.7) 42% 48%, transparent 48%),
-    linear-gradient(-70deg, transparent 0 42%, rgba(255, 255, 255, 0.7) 42% 48%, transparent 48%),
+    linear-gradient(
+      70deg,
+      transparent 0 42%,
+      rgba(255, 255, 255, 0.7) 42% 48%,
+      transparent 48%
+    ),
+    linear-gradient(
+      -70deg,
+      transparent 0 42%,
+      rgba(255, 255, 255, 0.7) 42% 48%,
+      transparent 48%
+    ),
     #f07f2f;
 }
 
@@ -2435,8 +2996,7 @@ h2 {
   padding: 2px 0;
   border: 2px solid var(--line);
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, #ffffff, #e6eef7);
+  background: linear-gradient(180deg, #ffffff, #e6eef7);
   color: var(--line);
   text-align: center;
   line-height: 1;
@@ -2471,7 +3031,9 @@ h2 {
   color: #111;
   font-size: 36px;
   z-index: 8;
-  box-shadow: inset 0 5px rgba(255, 255, 255, 0.75), 0 6px 0 rgba(29, 38, 48, 0.45);
+  box-shadow:
+    inset 0 5px rgba(255, 255, 255, 0.75),
+    0 6px 0 rgba(29, 38, 48, 0.45);
   animation: dice-roll-pop 1.06s ease-in-out both;
 }
 
@@ -2714,7 +3276,9 @@ h2 {
 
 .worker.selected {
   outline: 4px solid #fff;
-  box-shadow: 0 0 0 6px var(--blue), inset 0 4px rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 0 0 6px var(--blue),
+    inset 0 4px rgba(255, 255, 255, 0.35);
 }
 
 .worker:nth-child(2n) {
@@ -2737,19 +3301,27 @@ h2 {
 }
 
 .worker.moving.entered-from-left {
-  animation: worker-enter-left 0.26s ease-out both, work-move 0.26s 0.26s ease-in-out infinite alternate;
+  animation:
+    worker-enter-left 0.26s ease-out both,
+    work-move 0.26s 0.26s ease-in-out infinite alternate;
 }
 
 .worker.moving.entered-from-right {
-  animation: worker-enter-right 0.26s ease-out both, work-move 0.26s 0.26s ease-in-out infinite alternate;
+  animation:
+    worker-enter-right 0.26s ease-out both,
+    work-move 0.26s 0.26s ease-in-out infinite alternate;
 }
 
 .worker.moving.entered-from-up {
-  animation: worker-enter-up 0.26s ease-out both, work-move 0.26s 0.26s ease-in-out infinite alternate;
+  animation:
+    worker-enter-up 0.26s ease-out both,
+    work-move 0.26s 0.26s ease-in-out infinite alternate;
 }
 
 .worker.moving.entered-from-down {
-  animation: worker-enter-down 0.26s ease-out both, work-move 0.26s 0.26s ease-in-out infinite alternate;
+  animation:
+    worker-enter-down 0.26s ease-out both,
+    work-move 0.26s 0.26s ease-in-out infinite alternate;
 }
 
 @keyframes work-bob {
@@ -2892,7 +3464,9 @@ h2 {
 @keyframes sterile-shine {
   to {
     transform: translateX(8px);
-    box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.95), 0 0 28px rgba(168, 231, 240, 0.95);
+    box-shadow:
+      inset 0 0 24px rgba(255, 255, 255, 0.95),
+      0 0 28px rgba(168, 231, 240, 0.95);
   }
 }
 
@@ -3004,8 +3578,7 @@ h2 {
   padding: 4px 7px 4px 4px;
   border: 4px solid var(--line);
   border-radius: 5px;
-  background:
-    linear-gradient(180deg, #ffffff, #ffe8bf);
+  background: linear-gradient(180deg, #ffffff, #ffe8bf);
   box-shadow:
     0 7px 0 rgba(29, 38, 48, 0.48),
     0 0 22px rgba(240, 90, 40, 0.72),
@@ -3143,7 +3716,11 @@ h2 {
   border: 3px solid var(--line);
   border-top: 0;
   background:
-    repeating-linear-gradient(45deg, rgba(37, 49, 58, 0.16) 0 12px, transparent 12px 24px),
+    repeating-linear-gradient(
+      45deg,
+      rgba(37, 49, 58, 0.16) 0 12px,
+      transparent 12px 24px
+    ),
     linear-gradient(#75b857, #4e8e3c);
 }
 
@@ -3162,7 +3739,9 @@ h2 {
   border: 3px solid var(--line);
   border-radius: 5px;
   background: linear-gradient(#fffdf1, var(--panel));
-  box-shadow: inset 0 2px rgba(255, 255, 255, 0.75), 0 6px 0 rgba(29, 38, 48, 0.25);
+  box-shadow:
+    inset 0 2px rgba(255, 255, 255, 0.75),
+    0 6px 0 rgba(29, 38, 48, 0.25);
 }
 
 .side-panel .trade-panel {
@@ -3310,14 +3889,15 @@ h2 {
   border: 3px solid var(--line);
   border-radius: 6px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), transparent 45%),
-    #fff;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), transparent 45%), #fff;
   color: #111;
   font-size: 27px;
   line-height: 1;
   font-weight: 900;
   text-align: center;
-  box-shadow: inset 0 3px rgba(255, 255, 255, 0.75), 0 3px 0 #8c8064;
+  box-shadow:
+    inset 0 3px rgba(255, 255, 255, 0.75),
+    0 3px 0 #8c8064;
 }
 
 .trade-die.rolling {
@@ -3447,10 +4027,14 @@ h2 {
   height: 30px;
   border: 2px solid #555;
   background:
-    linear-gradient(90deg, #555 0 4px, transparent 4px 100%) left top / 12px 12px no-repeat,
-    linear-gradient(180deg, #555 0 4px, transparent 4px 100%) left top / 12px 12px no-repeat,
-    linear-gradient(270deg, #555 0 4px, transparent 4px 100%) right bottom / 12px 12px no-repeat,
-    linear-gradient(0deg, #555 0 4px, transparent 4px 100%) right bottom / 12px 12px no-repeat,
+    linear-gradient(90deg, #555 0 4px, transparent 4px 100%) left top / 12px
+      12px no-repeat,
+    linear-gradient(180deg, #555 0 4px, transparent 4px 100%) left top / 12px
+      12px no-repeat,
+    linear-gradient(270deg, #555 0 4px, transparent 4px 100%) right bottom /
+      12px 12px no-repeat,
+    linear-gradient(0deg, #555 0 4px, transparent 4px 100%) right bottom / 12px
+      12px no-repeat,
     #ddd;
 }
 
@@ -3709,8 +4293,16 @@ h2 {
   overflow: hidden;
   padding: 28px;
   background:
-    radial-gradient(circle at 20% 20%, rgba(241, 195, 59, 0.35), transparent 18%),
-    radial-gradient(circle at 78% 24%, rgba(120, 183, 232, 0.35), transparent 18%),
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(241, 195, 59, 0.35),
+      transparent 18%
+    ),
+    radial-gradient(
+      circle at 78% 24%,
+      rgba(120, 183, 232, 0.35),
+      transparent 18%
+    ),
     linear-gradient(180deg, #16293b, #0f1722);
 }
 
