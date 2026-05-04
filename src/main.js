@@ -372,33 +372,26 @@ function gameView() {
             <div class="project-readout">
               <span>Current Project</span>
               <strong>${currentProject().name}</strong>
-              <em>${state.mode.name}</em>
+              <em>Day ${state.day} / ${projectDuration()} · ${state.mode.name}</em>
             </div>
-            <div class="arcade-hud">
-              <div class="hud-tile day ${state.day > projectDuration() ? "bad" : ""}">
-                <span>Day</span>
-                <strong>${state.day}</strong>
-                <em>/${projectDuration()}</em>
-              </div>
-              <div class="hud-tile profit ${state.profit < 0 ? "bad" : ""}">
-                <span>Profit</span>
-                <strong>${formatMoney(state.profit)}</strong>
-              </div>
+            <div class="profit-readout ${state.profit < 0 ? "bad" : ""}">
+              <span>Profit</span>
+              <strong>${formatMoney(state.profit)}</strong>
             </div>
           </header>
           ${liveDamagesBanner()}
 
           <div class="game-layout">
             <aside class="side-panel left-panel">
-              ${scheduleBar()}
-              ${budgetGauge()}
-              ${roadblockPanel()}
+              ${tradePanel()}
             </aside>
             <div class="playfield">
               ${towerView()}
             </div>
             <aside class="side-panel right-panel">
-              ${tradePanel()}
+              ${scheduleBar()}
+              ${budgetGauge()}
+              ${roadblockPanel()}
             </aside>
           </div>
         </div>
