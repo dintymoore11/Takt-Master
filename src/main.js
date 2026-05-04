@@ -10,6 +10,7 @@ import {
   MODES,
 } from "./gameConfig.js";
 import { visualForTrade } from "./visualAssets.js";
+import { projectBackdrop, zoneVisualLayers } from "./projectVisuals.js";
 import {
   buildingAssetForProject,
   roadblockAsset,
@@ -143,20 +144,12 @@ function titleView() {
           <strong>Leaderboard</strong>
           ${leaderboardRows()}
         </section>
-        <section class="project-picker">
-          <strong>Test Project</strong>
-          <div>
-            ${PROJECTS.map(
-              (project, index) => `
-              <button type="button" data-test-project="${index + 1}">
-                <span>${index + 1}</span>
-                ${project.name}
-              </button>
-            `,
-            ).join("")}
-          </div>
-        </section>
+        <button class="project-selector-button" type="button" data-project-selector>
+          <span>Project Selector</span>
+          <small>Choose any project</small>
+        </button>
       </section>
+      ${state.projectSelectorOpen ? projectSelectorModal() : ""}
       <section class="demo-cabinet" aria-label="Gameplay preview">
         <div class="demo-tower">
           ${
@@ -179,6 +172,31 @@ function titleView() {
         </div>
       </section>
     </main>
+  `;
+}
+
+function projectSelectorModal() {
+  return `
+    <section class="project-selector-modal" role="dialog" aria-modal="true" aria-label="Project Selector">
+      <div class="project-selector-card">
+        <div class="project-selector-heading">
+          <strong>Project Selector</strong>
+          <span>Move / Space</span>
+        </div>
+        <div class="project-selector-grid">
+          ${PROJECTS.map(
+            (project, index) => `
+              <button class="${index === state.projectSelectorIndex ? "selected" : ""}" type="button" data-test-project="${index + 1}">
+                <span>${index + 1}</span>
+                <strong>${project.name}</strong>
+                <small>${project.summary}</small>
+              </button>
+            `,
+          ).join("")}
+        </div>
+        <button class="project-selector-close" type="button" data-project-selector-close>Close</button>
+      </div>
+    </section>
   `;
 }
 
@@ -513,6 +531,7 @@ function roundPhaseHelp() {
 function towerView() {
   const project = currentProject();
   return `
+    ${projectBackdrop(project)}
     <section class="tower ${project.type}-tower" aria-label="${project.name} with ${zoneCount()} zones" style="--building-asset: url('${buildingAssetForProject(project)}')">
       ${visibleLevels()
         .map((level) => towerLevel(level))
@@ -548,7 +567,7 @@ function towerZone(zoneNumber) {
     <button class="tower-zone ${selected ? "selected-zone" : ""}" data-zone="${zoneNumber}" type="button">
       <span class="zone-number">${zoneNumber}</span>
       <div class="office-work">
-        ${zoneWorkLayers(zoneNumber)}
+        ${zoneWorkLayers(currentProject(), zoneNumber)}
       </div>
       <div class="work-stack">
         ${tradesInZone.map((trade) => workerToken(trade)).join("")}
@@ -559,15 +578,8 @@ function towerZone(zoneNumber) {
   `;
 }
 
-function zoneWorkLayers(zoneNumber) {
-  return state.trades
-    .filter((trade) => trade.zoneWorkWeeks[zoneNumber]?.length)
-    .map((trade) => {
-      const active = trade.zone === zoneNumber && !trade.finished;
-      const visual = visualForTrade(trade);
-      return `<span class="work-layer ${visual.workClass} ${active ? "active-work" : ""}" style="--work-asset: url('${visual.workAsset}')"></span>`;
-    })
-    .join("");
+function zoneWorkLayers(project, zoneNumber) {
+  return zoneVisualLayers(project, state.trades, zoneNumber);
 }
 
 function delayCalloutForZone(zoneNumber) {
@@ -926,19 +938,43 @@ function bindTitle() {
     state.projectRound = 1;
     state.totalProfit = 0;
     state.gameOver = false;
+    state.projectSelectorOpen = false;
     state.phase = "setup";
     render();
   });
 
-  document.querySelectorAll("[data-test-project]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.projectRound = Number(button.dataset.testProject);
-      state.totalProfit = 0;
-      state.gameOver = false;
-      state.phase = "setup";
+  document.querySelector("[data-project-selector]")?.addEventListener("click", () => {
+    state.projectSelectorOpen = true;
+    state.projectSelectorIndex = Math.max(0, state.projectRound - 1);
+    render();
+  });
+
+  document
+    .querySelector("[data-project-selector-close]")
+    ?.addEventListener("click", () => {
+      state.projectSelectorOpen = false;
       render();
     });
+
+  document.querySelectorAll("[data-test-project]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectTestProject(Number(button.dataset.testProject) - 1);
+    });
   });
+}
+
+function selectTestProject(index) {
+  state.projectRound = index + 1;
+  state.projectSelectorIndex = index;
+  state.projectSelectorOpen = false;
+  state.totalProfit = 0;
+  state.gameOver = false;
+  state.phase = "setup";
+  render();
+}
+
+function projectSelectorColumns() {
+  return window.matchMedia("(max-width: 980px)").matches ? 1 : 2;
 }
 
 function bindSetup() {
@@ -1030,9 +1066,57 @@ window.addEventListener("keydown", (event) => {
   noteUserActivity();
 
   if (state.phase === "title") {
+    if (state.projectSelectorOpen) {
+      const projectSelectorColumnCount = projectSelectorColumns();
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        state.projectSelectorOpen = false;
+        render();
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        state.projectSelectorIndex = Math.max(0, state.projectSelectorIndex - 1);
+      } else if (event.key === "ArrowRight") {
+        state.projectSelectorIndex = Math.min(
+          PROJECTS.length - 1,
+          state.projectSelectorIndex + 1,
+        );
+      } else if (event.key === "ArrowUp") {
+        state.projectSelectorIndex = Math.max(
+          0,
+          state.projectSelectorIndex - projectSelectorColumnCount,
+        );
+      } else if (event.key === "ArrowDown") {
+        state.projectSelectorIndex = Math.min(
+          PROJECTS.length - 1,
+          state.projectSelectorIndex + projectSelectorColumnCount,
+        );
+      } else if (event.code === "Space" || event.key === "Enter") {
+        event.preventDefault();
+        selectTestProject(state.projectSelectorIndex);
+        return;
+      } else {
+        return;
+      }
+
+      event.preventDefault();
+      render();
+      return;
+    }
+
     if (event.key.toLowerCase() === "s") {
       event.preventDefault();
       state.phase = "setup";
+      render();
+      return;
+    }
+
+    if (event.code === "Space") {
+      event.preventDefault();
+      state.projectSelectorOpen = true;
+      state.projectSelectorIndex = Math.max(0, state.projectRound - 1);
       render();
     }
     return;

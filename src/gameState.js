@@ -31,6 +31,8 @@ export function createInitialState() {
     nameCursor: 0,
     quitConfirm: false,
     endActionIndex: 0,
+    projectSelectorOpen: false,
+    projectSelectorIndex: 0,
   };
 }
 
