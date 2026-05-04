@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" role="img" aria-label="Data center">
+  <rect x="18" y="18" width="124" height="64" rx="8" fill="#172033"/>
+  <path d="M36 34h22v32H36zM70 34h22v32H70zM104 34h22v32h-22z" fill="#25324a"/>
+  <path d="M42 44h10M76 44h10M110 44h10M42 56h10M76 56h10M110 56h10" stroke="#38f2a6" stroke-width="4" stroke-linecap="round"/>
+  <path d="M18 82h124" stroke="#38bdf8" stroke-width="4" opacity=".7"/>
+</svg>

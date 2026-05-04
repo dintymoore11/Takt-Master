@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 64" role="img" aria-label="Road closed barricade">
+  <defs>
+    <linearGradient id="rail" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fed7aa"/>
+      <stop offset=".36" stop-color="#fb923c"/>
+      <stop offset="1" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="48" cy="59" rx="34" ry="4" fill="#111827" opacity=".25"/>
+  <rect x="10" y="20" width="76" height="22" rx="4" fill="url(#rail)" stroke="#1f2937" stroke-width="4"/>
+  <path d="M18 42 35 20M43 42l17-22M68 42l13-17" stroke="#fff7ed" stroke-width="8"/>
+  <path d="M24 42 16 58M72 42l8 16" stroke="#334155" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="79" cy="18" r="9" fill="#facc15" stroke="#1f2937" stroke-width="4"/>
+  <path d="M79 13v6" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/>
+</svg>
