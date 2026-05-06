@@ -44,7 +44,6 @@ import {
   stopTimer,
   tradeTemplates,
   tradeForSelectedZonePush,
-  tradeLocation,
   usesPlanGrid,
   visibleLevels,
   visualColumn,
@@ -378,39 +377,36 @@ function winView() {
 }
 
 function gameView() {
+  const project = currentProject();
   return `
-    <main class="game-shell phase-${state.roundPhase}">
+    <main class="game-shell phase-${state.roundPhase} project-${project.type}">
       <section class="unity-frame">
         <div class="stage">
           <header class="topbar">
             <div class="topbar-title">
-              <strong>TAKT MASTER</strong>
-              <span>Project ${state.projectRound}</span>
+              ${topbarTitle(project)}
             </div>
             <div class="project-readout">
-              <span>Current Project</span>
-              <strong>${currentProject().name}</strong>
-              <em>Day ${state.day} / ${projectDuration()} · ${state.mode.name}</em>
+              ${projectReadout(project)}
+            </div>
+            ${project.type === "office" ? dayReadout() : ""}
+            <div class="topbar-timeline">
+              ${scheduleBar()}
+              ${budgetGauge()}
             </div>
             <div class="profit-readout ${state.profit < 0 ? "bad" : ""}">
               <span>Profit</span>
               <strong>${formatMoney(state.profit)}</strong>
             </div>
           </header>
+          ${project.type === "office" ? projectBackdrop(project) : ""}
           ${liveDamagesBanner()}
 
           <div class="game-layout">
-            <aside class="side-panel left-panel">
-              ${tradePanel()}
-            </aside>
+            ${project.type === "office" ? tradesPanel(project) : ""}
             <div class="playfield">
               ${towerView()}
             </div>
-            <aside class="side-panel right-panel">
-              ${scheduleBar()}
-              ${budgetGauge()}
-              ${roadblockPanel()}
-            </aside>
           </div>
         </div>
         <footer class="unity-footer">
@@ -423,37 +419,55 @@ function gameView() {
   `;
 }
 
-function tradePanel() {
+function topbarTitle(project) {
+  if (project.type === "office") {
+    return `<strong><span>TAKT</span> MASTER</strong>`;
+  }
+
   return `
-    <section class="trade-panel compact-panel">
-      <div class="trade-panel-heading">
-        <strong>Trades</strong>
-        <span>${roundPhaseHelp()}</span>
-      </div>
-      <div class="trade-list" style="--trade-count: 1">
-        ${state.trades.map((trade, index) => tradeCard(trade, index)).join("")}
-      </div>
-    </section>
+    <strong>TAKT MASTER</strong>
+    <span>Project ${state.projectRound}</span>
   `;
 }
 
-function roadblockPanel() {
+function projectReadout(project) {
+  if (project.type === "office") {
+    return `<strong>Project ${state.projectRound}: ${project.name}</strong>`;
+  }
+
   return `
-    <section class="roadblock-panel compact-panel">
-      <div class="trade-panel-heading">
-        <strong>Roadblocks</strong>
-        <span>${state.roadblocks.length}</span>
-      </div>
-      <div class="roadblock-list">
-        ${
-          state.roadblocks.length
-            ? state.roadblocks
-                .map((roadblock, index) => roadblockItem(roadblock, index))
-                .join("")
-            : "<p>Clear</p>"
-        }
-      </div>
-    </section>
+    <span>Current Project</span>
+    <strong>${project.name}</strong>
+    <em>Day ${state.day} / ${projectDuration()} · ${state.mode.name}</em>
+  `;
+}
+
+function dayReadout() {
+  return `
+    <div class="day-readout">
+      <strong>Day <span>${state.day}</span> / ${projectDuration()}</strong>
+    </div>
+  `;
+}
+
+function tradesPanel(project) {
+  return `
+    <aside class="trades-panel" aria-label="Trades">
+      <strong>Trades</strong>
+      <ol>
+        ${project.trades
+          .map(
+            (trade, index) => `
+              <li style="--trade-color: ${trade.color}">
+                <span class="trade-icon trade-icon-${trade.key}" aria-hidden="true"></span>
+                <b>${index + 1}</b>
+                <span>${trade.name}</span>
+              </li>
+            `,
+          )
+          .join("")}
+      </ol>
+    </aside>
   `;
 }
 
@@ -501,13 +515,13 @@ function budgetGauge() {
   const costPercent = Math.min(130, (costs / budget) * 100);
   return `
     <div class="budget-gauge ${costs > budget ? "overrun" : ""}" aria-label="Project budget and costs">
-      <div class="budget-column">
-        <span class="cost-fill" style="height: ${costPercent}%"></span>
-        <span class="budget-marker"></span>
-      </div>
       <div class="budget-labels">
         <span>Budget <strong>${formatMoney(budget)}</strong></span>
         <span>Costs <strong>${formatMoney(costs)}</strong></span>
+      </div>
+      <div class="budget-track">
+        <span class="cost-fill" style="width: ${costPercent}%"></span>
+        <span class="budget-marker"></span>
       </div>
     </div>
   `;
@@ -522,16 +536,10 @@ function stat(label, value, tone = "") {
   `;
 }
 
-function roundPhaseHelp() {
-  if (state.roundPhase === "rolling") return "Dice rolling";
-  if (state.roundPhase === "moving") return "Trades moving";
-  return "Costs updating";
-}
-
 function towerView() {
   const project = currentProject();
   return `
-    ${projectBackdrop(project)}
+    ${project.type === "office" ? "" : projectBackdrop(project)}
     <section class="tower ${project.type}-tower" aria-label="${project.name} with ${zoneCount()} zones" style="--building-asset: url('${buildingAssetForProject(project)}')">
       ${visibleLevels()
         .map((level) => towerLevel(level))
@@ -544,13 +552,24 @@ function towerView() {
 function towerLevel(level) {
   return `
     <div class="tower-level">
-      <div class="level-label">Level ${level}</div>
+      <div class="level-label">${levelLabel(level)}</div>
       <div class="level-zones" style="--zone-columns: ${zoneColumns()}">
         ${zonesForLevel(level)
           .map((zone) => towerZone(zone))
           .join("")}
       </div>
     </div>
+  `;
+}
+
+function levelLabel(level) {
+  if (currentProject().type !== "office") return `Level ${level}`;
+
+  const names = ["First", "Second", "Third", "Fourth", "Fifth"];
+  return `
+    <span class="level-number">${level}</span>
+    <span>${names[level - 1] ?? `Level ${level}`}</span>
+    <small>Floor</small>
   `;
 }
 
@@ -630,6 +649,18 @@ function workerToken(trade) {
   `;
 }
 
+function tradeDice(trade) {
+  const rolling =
+    state.roundPhase === "rolling" && !trade.finished && trade.pendingSteps > 0;
+  const pushed = trade.pushedUntil > Date.now();
+  return `
+    <span class="trade-die ${rolling ? "rolling" : ""} ${trade.lastRoll ? "rolled" : ""} ${pushed ? "pushed" : ""}">
+      <img class="die-asset" src="${uiAsset("die")}" alt="" aria-hidden="true">
+      ${trade.lastRoll ?? "?"}
+    </span>
+  `;
+}
+
 function tradeLabel(trade) {
   return visualForTrade(trade).label;
 }
@@ -670,58 +701,6 @@ function roadblockMarker(roadblock) {
       </span>
       <b class="${timer < 0 ? "negative" : ""}">${timer}</b>
     </span>
-  `;
-}
-
-function tradeCard(trade, index) {
-  const pushing = trade.pushedUntil > Date.now();
-  return `
-    <article class="trade-card trade-card-${index} ${pushing ? "pushed" : ""}">
-      <span class="trade-swatch" style="background: ${trade.color}"></span>
-      <div>
-        <strong>${trade.name}</strong>
-        <span>${tradeLocation(trade)}</span>
-      </div>
-      <div class="trade-status">
-        <span class="face">${moraleFace(trade)}</span>
-        ${tradeDice(trade)}
-      </div>
-      <div class="morale">
-        <span style="width: ${trade.morale}%"></span>
-      </div>
-      ${pushing ? `<span class="push-flash">${trade.pushFlash}</span>` : ""}
-    </article>
-  `;
-}
-
-function tradeDice(trade) {
-  const rolling =
-    state.roundPhase === "rolling" && !trade.finished && trade.pendingSteps > 0;
-  const pushed = trade.pushedUntil > Date.now();
-  return `
-    <span class="trade-die ${rolling ? "rolling" : ""} ${trade.lastRoll ? "rolled" : ""} ${pushed ? "pushed" : ""}">
-      <img class="die-asset" src="${uiAsset("die")}" alt="" aria-hidden="true">
-      ${trade.lastRoll ?? "?"}
-    </span>
-  `;
-}
-
-function roadblockItem(roadblock, index) {
-  const trade = getTrade(roadblock.tradeId);
-  const timer = roadblockTimer(roadblock);
-  const asset = roadblockAsset(roadblock.visualKey);
-  return `
-    <button class="roadblock ${roadblock.zone === state.selectedZone ? "selected" : ""}" data-roadblock="${index}" style="--trade-color: ${trade.color}" type="button">
-      <span class="blocker">
-        <img class="roadblock-list-asset" src="${asset}" alt="" aria-hidden="true">
-        !
-      </span>
-      <span>
-        <strong>${roadblock.label}</strong>
-        <small>${trade.name} · level ${zoneLevel(roadblock.zone)} bay ${zoneBay(roadblock.zone)}</small>
-      </span>
-      <b class="${timer < 0 ? "negative" : ""}">${timer}</b>
-    </button>
   `;
 }
 

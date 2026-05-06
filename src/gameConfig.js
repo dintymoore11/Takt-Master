@@ -7,13 +7,13 @@ export const PROJECTS = [
     summary: "Office building",
     trades: [
       { key: "framing", name: "Framing", color: "#7d8790", baseCost: 1750 },
+      { key: "plumbing", name: "Plumbing", color: "#2388d1", baseCost: 1700 },
       {
         key: "electrical",
         name: "Electrical",
         color: "#f3c537",
         baseCost: 1680,
       },
-      { key: "plumbing", name: "Plumbing", color: "#2388d1", baseCost: 1700 },
       { key: "drywall", name: "Drywall", color: "#d8d2c6", baseCost: 1620 },
       { key: "painting", name: "Painting", color: "#78b7e8", baseCost: 1500 },
       { key: "finishes", name: "Finishes", color: "#55a85f", baseCost: 1850 },
