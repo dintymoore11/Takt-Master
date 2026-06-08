@@ -15,15 +15,37 @@ export const DEFAULT_TRADE_VISUAL = {
   workAsset: TRADE_ASSETS.generic.work,
   animation: "default",
   label: "TR",
+  sprite: null,
 };
 
-const tradeVisual = (key, workAnimation, label) => ({
+const GENERIC_WORKER_STATES = {
+  idle: { row: 0, duration: "1.8s", timing: "steps(1, end)" },
+  walking: { row: 1, duration: "0.62s", timing: "steps(3, end)" },
+  working: { row: 2, duration: "0.82s", timing: "steps(3, end)" },
+  waiting: { row: 3, duration: "1.05s", timing: "steps(1, end)" },
+  angry: { row: 4, duration: "0.42s", timing: "steps(1, end)" },
+};
+
+const genericWorkerSprite = (key = "generic") => ({
+  asset: `/workers/${key}.png`,
+  columns: 4,
+  rows: 5,
+  states: GENERIC_WORKER_STATES,
+});
+
+const tradeVisual = (
+  key,
+  workAnimation,
+  label,
+  sprite = genericWorkerSprite(key),
+) => ({
   workerClass: `worker-${key}`,
   workClass: `work-${key}`,
   workerAsset: TRADE_ASSETS[key]?.worker ?? TRADE_ASSETS.generic.worker,
   workAsset: TRADE_ASSETS[key]?.work ?? TRADE_ASSETS.generic.work,
   animation: workAnimation,
   label,
+  sprite,
 });
 
 export const TRADE_VISUALS = {
@@ -67,5 +89,6 @@ export function visualForTrade(trade) {
       TRADE_ASSETS[visualKey]?.worker ?? DEFAULT_TRADE_VISUAL.workerAsset,
     workAsset: TRADE_ASSETS[visualKey]?.work ?? DEFAULT_TRADE_VISUAL.workAsset,
     label: initialsForName(trade?.name) || DEFAULT_TRADE_VISUAL.label,
+    sprite: genericWorkerSprite(visualKey),
   };
 }

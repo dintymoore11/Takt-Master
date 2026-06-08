@@ -10,8 +10,14 @@ import {
   MODES,
 } from "./gameConfig.js";
 import { visualForTrade } from "./visualAssets.js";
-import { projectBackdrop, zoneVisualLayers } from "./projectVisuals.js";
 import {
+  hasProjectBackdrop,
+  projectBackdrop,
+  projectZoneOverlayLayers,
+  zoneVisualLayers,
+} from "./projectVisuals.js";
+import {
+  BUILDING_ASSETS,
   buildingAssetForProject,
   roadblockAsset,
   uiAsset,
@@ -26,7 +32,6 @@ import {
   leaderboardQualifies,
   levelCount,
   loadLeaderboard,
-  moraleFace,
   projectBudget,
   projectDuration,
   pushSelectedTrade,
@@ -127,49 +132,47 @@ function render() {
 function titleView() {
   return `
     <main class="title-screen">
-      <section class="title-copy">
-        <p class="eyebrow">Arcade Construction Simulation</p>
-        <h1>Takt Master</h1>
-        <h2>Build with flow.</h2>
-        <p class="summary">Sequence trades through an office building, clear roadblocks, protect morale, and finish projects before budget and schedule run out.</p>
-        <button class="start-button" type="button" data-start>
-          <img class="button-icon" src="${uiAsset("start")}" alt="" aria-hidden="true">
-          Start
-        </button>
-        <p class="press-start">Press S</p>
+      <section class="title-copy" aria-label="Flow Builder">
+        <div class="title-mark" aria-hidden="true">
+          <span class="title-crane"></span>
+        </div>
+        <h1><span>Flow</span> Builder</h1>
+        <div class="title-actions">
+          <button class="start-button" type="button" data-start>
+            <img class="button-icon" src="${uiAsset("start")}" alt="" aria-hidden="true">
+            Press Start
+          </button>
+          <button class="project-selector-button" type="button" data-project-selector>
+            <span>Level Selector</span>
+            <small>Temporary testing</small>
+          </button>
+        </div>
+      </section>
+      <section class="title-trades" aria-label="Trade sequence">
+        ${["Structural", "HVAC", "Plumbing", "Electrical", "Fire Protection", "Containment", "Equipment"]
+          .map(
+            (trade) => `
+              <div class="title-trade title-trade-${trade.toLowerCase().replaceAll(" ", "-")}">
+                <i aria-hidden="true"></i>
+                <span>${trade}</span>
+              </div>
+            `,
+          )
+          .join("")}
+      </section>
+      <section class="title-hero" aria-label="Data center preview">
+        <img src="${BUILDING_ASSETS["data-center-project-3"]}" alt="">
       </section>
       <section class="title-sidebar">
         <section class="leaderboard title-board">
-          <strong>Leaderboard</strong>
+          <div class="title-board-heading">
+            <span aria-hidden="true"></span>
+            <strong>Leaderboard</strong>
+          </div>
           ${leaderboardRows()}
         </section>
-        <button class="project-selector-button" type="button" data-project-selector>
-          <span>Project Selector</span>
-          <small>Choose any project</small>
-        </button>
       </section>
       ${state.projectSelectorOpen ? projectSelectorModal() : ""}
-      <section class="demo-cabinet" aria-label="Gameplay preview">
-        <div class="demo-tower">
-          ${
-            PROJECTS[0].levels
-              ? Array.from(
-                  { length: PROJECTS[0].levels },
-                  (_, index) => PROJECTS[0].levels - index,
-                )
-                  .map(
-                    (level) => `
-            <div class="demo-level">
-              <span>Level ${level}</span>
-              ${Array.from({ length: PROJECTS[0].zonesPerLevel }, (_, index) => `<i style="--delay: ${index}; --color: ${PROJECTS[0].trades[index % PROJECTS[0].trades.length].color}"></i>`).join("")}
-            </div>
-          `,
-                  )
-                  .join("")
-              : ""
-          }
-        </div>
-      </section>
     </main>
   `;
 }
@@ -209,7 +212,7 @@ function setupView() {
       <section class="setup-overlay">
         <p class="eyebrow">Project ${state.projectRound}</p>
         <h1>${project.name}</h1>
-        <h2>Takt Master</h2>
+        <h2>Flow Builder</h2>
         <p class="setup-subtitle">Build with flow.</p>
         <p class="summary">${project.summary}, ${levelCount()} levels, ${zoneCount()} zones, ${tradeTemplates().length} trades, ${formatMoney(projectBudget())} budget, ${projectDuration()} day schedule.</p>
         <section class="briefing-panel">
@@ -389,7 +392,7 @@ function gameView() {
             <div class="project-readout">
               ${projectReadout(project)}
             </div>
-            ${project.type === "office" ? dayReadout() : ""}
+            ${dayReadout()}
             <div class="topbar-timeline">
               ${scheduleBar()}
               ${budgetGauge()}
@@ -399,18 +402,18 @@ function gameView() {
               <strong>${formatMoney(state.profit)}</strong>
             </div>
           </header>
-          ${project.type === "office" ? projectBackdrop(project) : ""}
+          ${hasProjectBackdrop(project) ? projectBackdrop(project) : ""}
           ${liveDamagesBanner()}
 
           <div class="game-layout">
-            ${project.type === "office" ? tradesPanel(project) : ""}
+            ${tradesPanel(project)}
             <div class="playfield">
               ${towerView()}
             </div>
           </div>
         </div>
         <footer class="unity-footer">
-          <span>Takt Master</span>
+          <span>Flow Builder</span>
           <button class="fullscreen-fake" type="button" aria-label="Fullscreen preview"></button>
         </footer>
       </section>
@@ -420,26 +423,11 @@ function gameView() {
 }
 
 function topbarTitle(project) {
-  if (project.type === "office") {
-    return `<strong><span>TAKT</span> MASTER</strong>`;
-  }
-
-  return `
-    <strong>TAKT MASTER</strong>
-    <span>Project ${state.projectRound}</span>
-  `;
+  return `<strong><span>FLOW</span></strong>`;
 }
 
 function projectReadout(project) {
-  if (project.type === "office") {
-    return `<strong>Project ${state.projectRound}: ${project.name}</strong>`;
-  }
-
-  return `
-    <span>Current Project</span>
-    <strong>${project.name}</strong>
-    <em>Day ${state.day} / ${projectDuration()} · ${state.mode.name}</em>
-  `;
+  return `<strong>Project ${state.projectRound}: ${project.name}</strong>`;
 }
 
 function dayReadout() {
@@ -539,14 +527,19 @@ function stat(label, value, tone = "") {
 function towerView() {
   const project = currentProject();
   return `
-    ${project.type === "office" ? "" : projectBackdrop(project)}
+    ${hasProjectBackdrop(project) ? "" : projectBackdrop(project)}
     <section class="tower ${project.type}-tower" aria-label="${project.name} with ${zoneCount()} zones" style="--building-asset: url('${buildingAssetForProject(project)}')">
       ${visibleLevels()
         .map((level) => towerLevel(level))
         .join("")}
+      ${projectZoneOverlayLayers(project, state.trades, projectZoneNumbers())}
       <div class="ground"></div>
     </section>
   `;
+}
+
+function projectZoneNumbers() {
+  return Array.from({ length: zoneCount() }, (_, index) => index + 1);
 }
 
 function towerLevel(level) {
@@ -621,18 +614,18 @@ function delayCalloutForZone(zoneNumber) {
 function workerToken(trade) {
   const visual = visualForTrade(trade);
   const movementClass = workerMovementClass(trade);
+  const animationState = workerAnimationState(trade);
+  const spriteClass = visual.sprite ? "sprite-worker" : "";
+  const spriteStyle = visual.sprite
+    ? spriteWorkerStyle(visual.sprite, animationState)
+    : "";
   const activelyFrustrated = trade.frustratedUntil > Date.now();
-  const delayedByProblem = trade.delayedToday && trade.waitReason !== "spacing";
-  const frustrated =
-    trade.morale < 70 ||
-    delayedByProblem ||
-    trade.pushedUntil > Date.now() ||
-    activelyFrustrated;
   const frustrationClass = activelyFrustrated
     ? `frustrated frustration-${trade.frustrationReason}`
     : "";
   return `
-    <span class="worker ${visual.workerClass} ${movementClass} ${frustrationClass} ${state.roundPhase === "moving" && trade.pendingSteps > 0 ? "moving" : ""}" style="--trade-color: ${trade.color}; --worker-asset: url('${visual.workerAsset}')">
+    <span class="worker ${visual.workerClass} ${spriteClass} worker-state-${animationState} ${movementClass} ${frustrationClass} ${state.roundPhase === "moving" && trade.pendingSteps > 0 ? "moving" : ""}" style="--trade-color: ${trade.color}; --worker-asset: url('${visual.workerAsset}'); ${spriteStyle}">
+      ${visual.sprite ? workerSprite() : ""}
       <span class="hardhat"></span>
       <span class="head"></span>
       <span class="torso"></span>
@@ -643,20 +636,75 @@ function workerToken(trade) {
       <span class="tool"></span>
       <span class="worker-label">${tradeLabel(trade)}</span>
       ${tradeDice(trade)}
-      ${frustrated ? `<span class="worker-morale">${moraleFace(trade)}</span>` : ""}
-      ${activelyFrustrated ? '<span class="frustration-burst">!</span>' : ""}
+      ${pushCostCallout(trade)}
+    </span>
+  `;
+}
+
+function pushCostCallout(trade) {
+  if (trade.pushedUntil <= Date.now()) return "";
+  return `<span class="worker-push-cost">${trade.pushFlash}</span>`;
+}
+
+function workerAnimationState(trade) {
+  if (
+    trade.pushedUntil > Date.now() ||
+    (trade.morale <= 28 && trade.frustratedUntil > Date.now())
+  ) {
+    return "angry";
+  }
+  if (
+    state.roundPhase === "moving" &&
+    trade.pendingSteps > 0 &&
+    !trade.delayedToday
+  ) {
+    return "walking";
+  }
+  if (
+    trade.waitReason === "blocked" ||
+    trade.delayedToday ||
+    trade.frustratedUntil > Date.now()
+  ) {
+    return "waiting";
+  }
+  if (state.roundPhase === "rolling") return "idle";
+  if (trade.zone > 0 && !trade.finished) return "working";
+  return "idle";
+}
+
+function spriteWorkerStyle(sprite, animationState) {
+  const stateConfig = sprite.states[animationState] ?? sprite.states.waiting;
+  return [
+    `--sprite-sheet: url('${sprite.asset}')`,
+    `--sprite-columns: ${sprite.columns}`,
+    `--sprite-rows: ${sprite.rows}`,
+    `--sprite-row: ${stateConfig.row}`,
+    `--sprite-duration: ${stateConfig.duration}`,
+    `--sprite-timing: ${stateConfig.timing}`,
+  ].join("; ");
+}
+
+function workerSprite() {
+  return `
+    <span class="worker-sprite-viewport" aria-hidden="true">
+      <span class="worker-sprite-sheet"></span>
     </span>
   `;
 }
 
 function tradeDice(trade) {
   const rolling =
-    state.roundPhase === "rolling" && !trade.finished && trade.pendingSteps > 0;
+    state.roundPhase === "rolling" &&
+    !trade.finished &&
+    trade.pendingSteps > 0 &&
+    trade.lastRoll;
+  if (!rolling) return "";
+
   const pushed = trade.pushedUntil > Date.now();
   return `
-    <span class="trade-die ${rolling ? "rolling" : ""} ${trade.lastRoll ? "rolled" : ""} ${pushed ? "pushed" : ""}">
+    <span class="trade-die rolling ${pushed ? "pushed" : ""}">
       <img class="die-asset" src="${uiAsset("die")}" alt="" aria-hidden="true">
-      ${trade.lastRoll ?? "?"}
+      ${trade.lastRoll}
     </span>
   `;
 }
@@ -1044,16 +1092,22 @@ function bindGame() {
 window.addEventListener("keydown", (event) => {
   noteUserActivity();
 
+  if (event.key === "Escape") {
+    event.preventDefault();
+    if (state.phase === "title" && state.projectSelectorOpen) {
+      state.projectSelectorOpen = false;
+      render();
+      return;
+    }
+    if (state.phase !== "title") {
+      returnToTitle();
+    }
+    return;
+  }
+
   if (state.phase === "title") {
     if (state.projectSelectorOpen) {
       const projectSelectorColumnCount = projectSelectorColumns();
-
-      if (event.key === "Escape") {
-        event.preventDefault();
-        state.projectSelectorOpen = false;
-        render();
-        return;
-      }
 
       if (event.key === "ArrowLeft") {
         state.projectSelectorIndex = Math.max(0, state.projectSelectorIndex - 1);
