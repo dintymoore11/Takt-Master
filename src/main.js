@@ -2,37 +2,45 @@ import "./style.css";
 
 import {
   PROJECTS,
-  DAILY_DELAY_COST,
-  LIQUIDATED_DAMAGES_PER_DAY,
   PERIOD_LABEL,
-  NAME_KEYS,
-  NAME_ACTIONS,
   MODES,
 } from "./gameConfig.js";
 import { visualForTrade } from "./visualAssets.js";
 import {
   hasProjectBackdrop,
   projectBackdrop,
+  projectZoneForDirection,
+  projectZoneStyle,
   projectZoneOverlayLayers,
   zoneVisualLayers,
 } from "./projectVisuals.js";
 import {
-  BUILDING_ASSETS,
+  audioAsset,
   buildingAssetForProject,
-  roadblockAsset,
   uiAsset,
 } from "./assets/manifest.js";
+import { setupModeIndex, setupView } from "./screens/projectSetupScreen.js";
+import {
+  nameEntryKeys,
+  nameEntryView,
+  scoreResultView,
+} from "./screens/leaderboardEntryScreen.js";
+import { winView } from "./screens/taktLegendScreen.js";
+import { titleView } from "./screens/titleScreen.js";
 import {
   addLog,
   activeTradeCount,
-  continueFromGameOver,
   currentProject,
+  dailyDelayCost,
   formatMoney,
+  gameplayDuration,
   getTrade,
+  isFinalProjectInLevel,
   leaderboardQualifies,
   levelCount,
-  loadLeaderboard,
+  liquidatedDamagesPerDay,
   projectBudget,
+  projectDay,
   projectDuration,
   pushSelectedTrade,
   quitToLeaderboard,
@@ -42,12 +50,18 @@ import {
   returnToTitle,
   saveLeaderboardScore,
   selectNameKey,
+  setRoadblockAppearedCallback,
+  setRoadblockResolvedCallback,
   setRenderCallback,
+  setRollDurationMs,
+  setWorkerBlockedCallback,
+  setWorkerPushedCallback,
+  setWorkerRoadblockedCallback,
+  setWorkerWorkCallback,
   startCampaign,
   startNextProject,
   state,
   stopTimer,
-  tradeTemplates,
   tradeForSelectedZonePush,
   usesPlanGrid,
   visibleLevels,
@@ -65,8 +79,168 @@ import {
 } from "./gameLogic.js";
 
 const IDLE_RETURN_MS = 90_000;
+const CONSTRUCTION_AMBIENCE_VOLUME = 0.24;
+const DICE_ROLL_VOLUME = 0.72;
+const WORKER_FRUSTRATION_VOLUME = 0.68;
+const WORKER_PUSHED_VOLUME = 0.7;
+const WORKER_WORK_VOLUME = 0.34;
+const WORKER_WORK_COOLDOWN_MS = 420;
+const PROJECT_RESULT_VOLUME = 0.82;
+const CAREER_VICTORY_VOLUME = 0.88;
+const ROADBLOCK_SOUND_VOLUME = 0.76;
+const WORKER_FRUSTRATION_SOUNDS = [
+  "frustrated-blocked-1",
+  "frustrated-blocked-2",
+  "frustrated-blocked-3",
+  "frustrated-blocked-4",
+  "held-up-1",
+  "held-up-2",
+  "held-up-3",
+  "held-up-4",
+  "held-up-5",
+  "held-up-6",
+  "held-up-7",
+  "held-up-8",
+];
+const WORKER_PUSHED_SOUNDS = [
+  "worker-pushed-1",
+  "worker-pushed-2",
+  "worker-pushed-3",
+];
+const WORKER_ROADBLOCKED_SOUNDS = [
+  "roadblock-held-up-1",
+  "roadblock-held-up-2",
+  "roadblock-held-up-3",
+  "roadblock-held-up-4",
+  "roadblock-held-up-5",
+  "roadblock-held-up-6",
+  "roadblock-held-up-7",
+  "roadblock-held-up-8",
+  "roadblock-held-up-9",
+  "roadblock-held-up-10",
+];
+const PROJECT_WIN_SOUNDS = [
+  ["result-win-1", "result-win-1a"],
+  ["result-win-2"],
+  ["result-win-3"],
+  ["result-win-4"],
+  ["result-win-5", "result-win-5a"],
+  ["result-win-6"],
+  ["result-win-7"],
+];
+const PROJECT_LOSE_SOUNDS = [
+  ["result-lose-1"],
+  ["result-lose-2", "result-lose-2a"],
+  ["result-lose-3"],
+  ["result-lose-4"],
+];
+const CAREER_VICTORY_SOUNDS = [
+  "victory-takt-legend-1",
+  "victory-takt-legend-2",
+  "victory-takt-legend-3",
+  "victory-takt-legend-4",
+  "victory-takt-legend-5",
+];
+const WORKER_WORK_SOUNDS = {
+  cutting: [
+    "work-cutting-1",
+    "work-cutting-2",
+    "work-cutting-3",
+    "work-cutting-4",
+  ],
+  drill: ["work-drill-1", "work-drill-2", "work-drill-3", "work-drill-4"],
+  drywall: [
+    "work-drywall-1",
+    "work-drywall-2",
+    "work-drywall-3",
+    "work-drywall-4",
+  ],
+  excavator: [
+    "work-excavator-1",
+    "work-excavator-2",
+    "work-excavator-3",
+    "work-excavator-4",
+  ],
+  foundation: ["work-foundation-1", "work-foundation-2", "work-foundation-3"],
+  hammer: ["work-hammer-1", "work-hammer-2"],
+  pounding: ["work-pounding-1", "work-pounding-2", "work-pounding-3"],
+  putty: ["work-putty-knife-1", "work-putty-knife-2", "work-putty-knife-3"],
+  sanding: ["work-sanding-1", "work-sanding-2"],
+  saw: ["work-saw-1", "work-saw-2", "work-saw-3"],
+  wrench: ["work-wrench-1", "work-wrench-2", "work-wrench-3", "work-wrench-4"],
+};
+const TRADE_WORK_SOUND_FAMILY = {
+  "access-roads": "excavator",
+  amenities: "saw",
+  "below-grade-utilities": "excavator",
+  "blade-install": "wrench",
+  "boilermakers-millwrights": "wrench",
+  "collection-cabling": "drill",
+  containment: "cutting",
+  "deep-foundations": "foundation",
+  drywall: "drywall",
+  earthwork: "excavator",
+  electrical: "drill",
+  "electrical-instrumentation": "drill",
+  elevators: "wrench",
+  equipment: "wrench",
+  "exterior-finishes": "cutting",
+  "ff-e": "putty",
+  "final-inspection": "drill",
+  "final-punchlist": "drill",
+  finishes: "putty",
+  fire: "drill",
+  "formwork-rebar": "pounding",
+  foundation: "foundation",
+  foundations: "foundation",
+  framing: "hammer",
+  "grid-tie": "drill",
+  "guestroom-mep": "wrench",
+  hvac: "wrench",
+  "industrial-commissioning": "drill",
+  "industrial-foundations": "foundation",
+  inverters: "drill",
+  "insulation-cladding": "cutting",
+  "interior-finishes": "putty",
+  landscaping: "cutting",
+  "mep-rough": "wrench",
+  "nacelle-install": "wrench",
+  painting: "sanding",
+  "pile-driving": "pounding",
+  "pipe-fitters": "wrench",
+  plumbing: "wrench",
+  "process-piping": "wrench",
+  "raised-floor": "hammer",
+  roofing: "saw",
+  "site-inspection": "drill",
+  skin: "cutting",
+  "skin-inspection": "drill",
+  "slab-foundation": "foundation",
+  "solar-commissioning": "drill",
+  "solar-panels": "drill",
+  "solar-racking": "wrench",
+  "structural-steel": "pounding",
+  structure: "pounding",
+  "survey-layout": "drill",
+  tile: "putty",
+  "tower-erection": "hammer",
+  underground: "excavator",
+  utilities: "wrench",
+  "utility-tie": "wrench",
+  waterproofing: "putty",
+  "wind-commissioning": "drill",
+};
 const app = document.querySelector("#app");
 let idleReturnTimer = null;
+let constructionAmbience = null;
+let constructionAmbiencePlaying = false;
+let diceRollAudio = null;
+let diceRollPlaybackKey = null;
+let lastWorkerWorkSoundAt = 0;
+let projectResultPlaybackKey = null;
+let careerVictoryPlaybackKey = null;
+
+const GAME_TITLE = "Takt Builder";
 
 function scheduleIdleReturn() {
   if (idleReturnTimer) {
@@ -86,8 +260,219 @@ function noteUserActivity() {
   scheduleIdleReturn();
 }
 
+function constructionAmbienceAudio() {
+  if (constructionAmbience) return constructionAmbience;
+
+  constructionAmbience = new Audio(audioAsset("construction-loop"));
+  constructionAmbience.loop = true;
+  constructionAmbience.preload = "auto";
+  constructionAmbience.volume = CONSTRUCTION_AMBIENCE_VOLUME;
+
+  return constructionAmbience;
+}
+
+function syncConstructionAmbience() {
+  const shouldPlay = state.phase === "running";
+  if (!shouldPlay) {
+    stopConstructionAmbience();
+    return;
+  }
+
+  const audio = constructionAmbienceAudio();
+  if (constructionAmbiencePlaying && !audio.paused) return;
+
+  const playRequest = audio.play();
+  constructionAmbiencePlaying = true;
+
+  if (playRequest?.catch) {
+    playRequest.catch(() => {
+      constructionAmbiencePlaying = false;
+    });
+  }
+}
+
+function stopConstructionAmbience() {
+  if (!constructionAmbience) return;
+
+  constructionAmbience.pause();
+  constructionAmbience.currentTime = 0;
+  constructionAmbiencePlaying = false;
+}
+
+function syncDiceRollDuration(audio) {
+  if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
+
+  const durationMs = Math.round(audio.duration * 1000);
+  setRollDurationMs(durationMs);
+  document.documentElement.style.setProperty("--dice-roll-duration", `${durationMs}ms`);
+}
+
+function diceRollSound() {
+  if (diceRollAudio) return diceRollAudio;
+
+  diceRollAudio = new Audio(audioAsset("dice-roll"));
+  diceRollAudio.preload = "auto";
+  diceRollAudio.volume = DICE_ROLL_VOLUME;
+  diceRollAudio.addEventListener("loadedmetadata", () => syncDiceRollDuration(diceRollAudio));
+
+  return diceRollAudio;
+}
+
+function syncDiceRollSound() {
+  if (state.phase !== "running") {
+    stopDiceRollSound();
+    return;
+  }
+
+  if (state.roundPhase !== "rolling") return;
+
+  const playbackKey = `${state.projectRound}:${state.day}`;
+  if (diceRollPlaybackKey === playbackKey) return;
+
+  const audio = diceRollSound();
+  syncDiceRollDuration(audio);
+  audio.currentTime = 0;
+  diceRollPlaybackKey = playbackKey;
+
+  const playRequest = audio.play();
+  if (playRequest?.catch) {
+    playRequest.catch(() => {
+      diceRollPlaybackKey = null;
+    });
+  }
+}
+
+function stopDiceRollSound() {
+  diceRollPlaybackKey = null;
+  if (!diceRollAudio) return;
+
+  diceRollAudio.pause();
+  diceRollAudio.currentTime = 0;
+}
+
+function playRandomAudio(keys, volume) {
+  if (!keys?.length) return;
+  const key = keys[Math.floor(Math.random() * keys.length)];
+  const audio = new Audio(audioAsset(key));
+  audio.volume = volume;
+
+  const playRequest = audio.play();
+  if (playRequest?.catch) playRequest.catch(() => {});
+}
+
+function playWorkerBlockedSound() {
+  playRandomAudio(WORKER_FRUSTRATION_SOUNDS, WORKER_FRUSTRATION_VOLUME);
+}
+
+function playWorkerRoadblockedSound() {
+  playRandomAudio(WORKER_ROADBLOCKED_SOUNDS, WORKER_FRUSTRATION_VOLUME);
+}
+
+function playWorkerPushedSound() {
+  playRandomAudio(WORKER_PUSHED_SOUNDS, WORKER_PUSHED_VOLUME);
+}
+
+function playRoadblockAppearedSound() {
+  playRandomAudio(["roadblock-appears"], ROADBLOCK_SOUND_VOLUME);
+}
+
+function playRoadblockResolvedSound() {
+  playRandomAudio(["roadblock-resolves"], ROADBLOCK_SOUND_VOLUME);
+}
+
+function syncProjectResultSound() {
+  if (state.phase !== "ended" && state.phase !== "gameOver") {
+    projectResultPlaybackKey = null;
+    return;
+  }
+
+  const playbackKey = `${state.projectRound}:${state.phase}:${state.day}:${state.profit}`;
+  if (projectResultPlaybackKey === playbackKey) return;
+  projectResultPlaybackKey = playbackKey;
+
+  playRandomAudio(projectResultSoundKeys(), PROJECT_RESULT_VOLUME);
+}
+
+function syncCareerVictorySound() {
+  if (state.phase !== "win") {
+    careerVictoryPlaybackKey = null;
+    return;
+  }
+
+  const playbackKey = `${state.projectRound}:${state.totalProfit}`;
+  if (careerVictoryPlaybackKey === playbackKey) return;
+  careerVictoryPlaybackKey = playbackKey;
+
+  playRandomAudio(CAREER_VICTORY_SOUNDS, CAREER_VICTORY_VOLUME);
+}
+
+function projectResultSoundKeys() {
+  const margin = (state.profit / projectBudget()) * 100;
+  if (margin < 0) {
+    return PROJECT_LOSE_SOUNDS[
+      bucketIndex(Math.abs(margin), [5, 15, 30], PROJECT_LOSE_SOUNDS.length)
+    ];
+  }
+
+  return PROJECT_WIN_SOUNDS[
+    bucketIndex(margin, [10, 20, 30, 40, 55, 70], PROJECT_WIN_SOUNDS.length)
+  ];
+}
+
+function bucketIndex(value, thresholds, bucketCount) {
+  const index = thresholds.findIndex((threshold) => value < threshold);
+  return index === -1 ? bucketCount - 1 : index;
+}
+
+function playWorkerWorkSound(trade) {
+  if (state.phase !== "running" || state.roundPhase === "rolling") return;
+
+  const now = Date.now();
+  if (now - lastWorkerWorkSoundAt < WORKER_WORK_COOLDOWN_MS) return;
+  lastWorkerWorkSoundAt = now;
+
+  const familyKey =
+    TRADE_WORK_SOUND_FAMILY[trade?.key] ??
+    TRADE_WORK_SOUND_FAMILY[trade?.visualKey] ??
+    soundFamilyFromTradeName(trade?.name);
+  const soundKeys = WORKER_WORK_SOUNDS[familyKey] ?? WORKER_WORK_SOUNDS.hammer;
+  playRandomAudio(soundKeys, WORKER_WORK_VOLUME);
+}
+
+function soundFamilyFromTradeName(name = "") {
+  const normalizedName = name.toLowerCase();
+  if (normalizedName.includes("excavat") || normalizedName.includes("earth")) {
+    return "excavator";
+  }
+  if (normalizedName.includes("foundation") || normalizedName.includes("concrete")) {
+    return "foundation";
+  }
+  if (normalizedName.includes("steel") || normalizedName.includes("structure")) {
+    return "pounding";
+  }
+  if (normalizedName.includes("drywall")) return "drywall";
+  if (normalizedName.includes("paint")) return "sanding";
+  if (normalizedName.includes("finish")) return "putty";
+  if (normalizedName.includes("roof") || normalizedName.includes("skin")) return "saw";
+  if (
+    normalizedName.includes("pipe") ||
+    normalizedName.includes("plumb") ||
+    normalizedName.includes("hvac")
+  ) {
+    return "wrench";
+  }
+  if (normalizedName.includes("electric") || normalizedName.includes("commission")) {
+    return "drill";
+  }
+  return "hammer";
+}
+
 function render() {
   scheduleIdleReturn();
+  syncConstructionAmbience();
+  syncDiceRollSound();
+  syncProjectResultSound();
+  syncCareerVictorySound();
 
   if (state.phase === "title") {
     app.innerHTML = titleView();
@@ -108,8 +493,8 @@ function render() {
   }
 
   if (state.phase === "gameOver") {
-    app.innerHTML = gameOverView();
-    bindGameOver();
+    app.innerHTML = gameView();
+    bindGame();
     return;
   }
 
@@ -129,254 +514,20 @@ function render() {
   bindGame();
 }
 
-function titleView() {
-  return `
-    <main class="title-screen">
-      <section class="title-copy" aria-label="Flow Builder">
-        <div class="title-mark" aria-hidden="true">
-          <span class="title-crane"></span>
-        </div>
-        <h1><span>Flow</span> Builder</h1>
-        <div class="title-actions">
-          <button class="start-button" type="button" data-start>
-            <img class="button-icon" src="${uiAsset("start")}" alt="" aria-hidden="true">
-            Press Start
-          </button>
-          <button class="project-selector-button" type="button" data-project-selector>
-            <span>Level Selector</span>
-            <small>Temporary testing</small>
-          </button>
-        </div>
-      </section>
-      <section class="title-trades" aria-label="Trade sequence">
-        ${["Structural", "HVAC", "Plumbing", "Electrical", "Fire Protection", "Containment", "Equipment"]
-          .map(
-            (trade) => `
-              <div class="title-trade title-trade-${trade.toLowerCase().replaceAll(" ", "-")}">
-                <i aria-hidden="true"></i>
-                <span>${trade}</span>
-              </div>
-            `,
-          )
-          .join("")}
-      </section>
-      <section class="title-hero" aria-label="Data center preview">
-        <img src="${BUILDING_ASSETS["data-center-project-3"]}" alt="">
-      </section>
-      <section class="title-sidebar">
-        <section class="leaderboard title-board">
-          <div class="title-board-heading">
-            <span aria-hidden="true"></span>
-            <strong>Leaderboard</strong>
-          </div>
-          ${leaderboardRows()}
-        </section>
-      </section>
-      ${state.projectSelectorOpen ? projectSelectorModal() : ""}
-    </main>
-  `;
+function selectSetupMode(index) {
+  state.setupModeIndex = Math.min(Math.max(index, 0), MODES.length - 1);
+  render();
 }
 
-function projectSelectorModal() {
-  return `
-    <section class="project-selector-modal" role="dialog" aria-modal="true" aria-label="Project Selector">
-      <div class="project-selector-card">
-        <div class="project-selector-heading">
-          <strong>Project Selector</strong>
-          <span>Move / Space</span>
-        </div>
-        <div class="project-selector-grid">
-          ${PROJECTS.map(
-            (project, index) => `
-              <button class="${index === state.projectSelectorIndex ? "selected" : ""}" type="button" data-test-project="${index + 1}">
-                <span>${index + 1}</span>
-                <strong>${project.name}</strong>
-                <small>${project.summary}</small>
-              </button>
-            `,
-          ).join("")}
-        </div>
-        <button class="project-selector-close" type="button" data-project-selector-close>Close</button>
-      </div>
-    </section>
-  `;
-}
+function startSetupProject(modeIndex = setupModeIndex()) {
+  const mode = MODES[modeIndex];
+  if (!mode) return;
 
-function setupView() {
-  const project = currentProject();
-  return `
-    <main class="setup-screen project-setup">
-      <div class="setup-stage" aria-hidden="true">
-        ${setupPreviewTower()}
-      </div>
-      <section class="setup-overlay">
-        <p class="eyebrow">Project ${state.projectRound}</p>
-        <h1>${project.name}</h1>
-        <h2>Flow Builder</h2>
-        <p class="setup-subtitle">Build with flow.</p>
-        <p class="summary">${project.summary}, ${levelCount()} levels, ${zoneCount()} zones, ${tradeTemplates().length} trades, ${formatMoney(projectBudget())} budget, ${projectDuration()} day schedule.</p>
-        <section class="briefing-panel">
-          ${stat("Project", state.projectRound)}
-          ${stat("Budget", formatMoney(projectBudget()))}
-          ${stat("Schedule", `${projectDuration()} days`)}
-        </section>
-        <section class="mode-grid" aria-label="Variability mode">
-          ${MODES.map(
-            (mode, index) => `
-              <button class="mode-button" data-mode="${index}" type="button">
-                <span class="mode-key">${index + 1}</span>
-                <span class="mode-title">${mode.name}</span>
-                <span class="dice-row">${mode.dice.map((value) => `<span class="die">${value}</span>`).join("")}</span>
-                <span class="mode-note">${mode.note}</span>
-              </button>
-            `,
-          ).join("")}
-        </section>
-      </section>
-    </main>
-  `;
-}
-
-function setupPreviewTower() {
-  const project = currentProject();
-  return `
-    <section class="tower ${project.type}-tower setup-preview-tower" style="--building-asset: url('${buildingAssetForProject(project)}')">
-      ${visibleLevels()
-        .map(
-          (level) => `
-        <div class="tower-level">
-          <div class="level-label">Level ${level}</div>
-          <div class="level-zones" style="--zone-columns: ${zoneColumns()}">
-            ${zonesForLevel(level)
-              .map(
-                (zone) => `
-              <div class="tower-zone preview-zone">
-                <span class="zone-number">${zone}</span>
-              </div>
-            `,
-              )
-              .join("")}
-          </div>
-        </div>
-      `,
-        )
-        .join("")}
-      <div class="ground"></div>
-    </section>
-  `;
-}
-
-function nameEntryView() {
-  if (state.scoreSaved) {
-    return `
-      <main class="name-screen">
-        <section class="name-card">
-          <p class="eyebrow">Score Saved</p>
-          <h1>Leaderboard</h1>
-          <p class="final-score">${state.scoreName} · Final score ${formatMoney(state.totalProfit)} · Last project ${state.projectRound}</p>
-          <button class="start-button" type="button" data-home>Home</button>
-          <p class="name-help">Press S, Space, or Enter</p>
-        </section>
-        <section class="leaderboard standalone">
-          <strong>Leaderboard</strong>
-          ${leaderboardRows()}
-        </section>
-      </main>
-    `;
+  if (state.projectRound === 1 && state.totalProfit === 0) {
+    startCampaign(mode);
+  } else {
+    resetProject(mode);
   }
-
-  return `
-    <main class="name-screen">
-      <section class="name-card">
-        <p class="eyebrow">Game Over</p>
-        <h1>Enter Name</h1>
-        <p class="final-score">Final score ${formatMoney(state.totalProfit)} · Last project ${state.projectRound}</p>
-        <div class="name-display">${(state.scoreName || "___").padEnd(3, "_")}</div>
-        <div class="letter-grid">
-          ${[...NAME_KEYS, ...NAME_ACTIONS]
-            .map(
-              (key, index) => `
-            <button class="${index === state.nameCursor ? "selected" : ""}" data-letter="${index}" type="button">${key}</button>
-          `,
-            )
-            .join("")}
-        </div>
-        <p class="name-help">Arrow keys move · Space selects · Enter saves</p>
-      </section>
-      <section class="leaderboard standalone">
-        <strong>Leaderboard</strong>
-        ${leaderboardRows()}
-      </section>
-    </main>
-  `;
-}
-
-function gameOverView() {
-  const qualified = leaderboardQualifies(state.totalProfit);
-  return `
-    <main class="name-screen">
-      <section class="name-card">
-        <p class="eyebrow">Game Over</p>
-        <h1>You Lost</h1>
-        <p class="final-score">Career earnings ${formatMoney(state.totalProfit)}</p>
-        <div class="briefing-panel compact-results">
-          ${stat("Last project", currentProject().name)}
-          ${stat("Project profit", formatMoney(state.profit), state.profit < 0 ? "bad" : "")}
-          ${scheduleVarianceStat()}
-          ${stat("Costs", formatMoney(totalProjectCosts()))}
-          ${stat("Schedule efficiency", `${scheduleEfficiency().toFixed(0)}%`)}
-        </div>
-        <button class="start-button" type="button" data-continue>${qualified ? "Enter Name" : "Results"}</button>
-        <p class="name-help">Press Space, Enter, or S</p>
-      </section>
-      <section class="leaderboard standalone">
-        <strong>Leaderboard</strong>
-        ${leaderboardRows()}
-      </section>
-    </main>
-  `;
-}
-
-function scoreResultView() {
-  return `
-    <main class="name-screen">
-      <section class="name-card">
-        <p class="eyebrow">Game Over</p>
-        <h1>Final Score</h1>
-        <p class="final-score">${formatMoney(state.totalProfit)} · Last project ${state.projectRound}</p>
-        <p class="name-help">Not enough for the leaderboard</p>
-        <button class="start-button" type="button" data-home>Home</button>
-        <p class="name-help">Press S, Space, Enter, or End</p>
-      </section>
-      <section class="leaderboard standalone">
-        <strong>Leaderboard</strong>
-        ${leaderboardRows()}
-      </section>
-    </main>
-  `;
-}
-
-function winView() {
-  return `
-    <main class="win-screen">
-      <div class="fireworks">
-        <span></span><span></span><span></span><span></span><span></span>
-      </div>
-      <section class="win-card">
-        <p class="eyebrow">Grand Opening</p>
-        <h1>You Won</h1>
-        <p class="summary">The hotel is open, the ribbon is cut, and your construction career ends in a successful retirement.</p>
-        <div class="ribbon-cutting">
-          <span class="ribbon left"></span>
-          <span class="scissors"></span>
-          <span class="ribbon right"></span>
-        </div>
-        <p class="final-score">Career earnings ${formatMoney(state.totalProfit)}</p>
-        <button class="start-button" type="button" data-continue>Enter Leaderboard</button>
-        <p class="name-help">Press Space, Enter, or S</p>
-      </section>
-    </main>
-  `;
 }
 
 function gameView() {
@@ -413,17 +564,17 @@ function gameView() {
           </div>
         </div>
         <footer class="unity-footer">
-          <span>Flow Builder</span>
+          <span>${GAME_TITLE}</span>
           <button class="fullscreen-fake" type="button" aria-label="Fullscreen preview"></button>
         </footer>
       </section>
-      ${state.phase === "ended" ? endScreen() : ""}
+      ${state.phase === "ended" || state.phase === "gameOver" ? endScreen() : ""}
     </main>
   `;
 }
 
 function topbarTitle(project) {
-  return `<strong><span>FLOW</span></strong>`;
+  return `<strong><span>TAKT</span> BUILDER</strong>`;
 }
 
 function projectReadout(project) {
@@ -433,7 +584,7 @@ function projectReadout(project) {
 function dayReadout() {
   return `
     <div class="day-readout">
-      <strong>Day <span>${state.day}</span> / ${projectDuration()}</strong>
+      <strong>Day <span>${projectDay()}</span> / ${projectDuration()}</strong>
     </div>
   `;
 }
@@ -462,7 +613,7 @@ function tradesPanel(project) {
 function liveDamagesBanner() {
   if (state.phase !== "running" || state.liquidatedDamages <= 0) return "";
   return `
-    <div class="live-damages ${state.liquidatedDamages === LIQUIDATED_DAMAGES_PER_DAY ? "first-hit" : ""}">
+    <div class="live-damages ${state.liquidatedDamages === liquidatedDamagesPerDay() ? "first-hit" : ""}">
       Liquidated damages -${formatMoney(state.liquidatedDamages)}
     </div>
   `;
@@ -478,13 +629,14 @@ function totalProjectCosts() {
 
 function scheduleBar() {
   const duration = projectDuration();
-  const progress = Math.min(100, (state.day / duration) * 100);
-  const overrun = state.day > duration;
+  const currentDay = projectDay();
+  const progress = Math.min(100, (currentDay / duration) * 100);
+  const overrun = currentDay > duration;
   return `
     <div class="schedule ${overrun ? "overrun" : ""}" aria-label="Project schedule">
       <div class="schedule-meta">
         <span>Start</span>
-        <strong>Day ${state.day} / ${duration}</strong>
+        <strong>Day ${currentDay} / ${duration}</strong>
         <span>Finish</span>
       </div>
       <div class="schedule-track">
@@ -576,7 +728,12 @@ function towerZone(zoneNumber) {
   const selected = state.selectedZone === zoneNumber;
   const delayCallout = delayCalloutForZone(zoneNumber);
   return `
-    <button class="tower-zone ${selected ? "selected-zone" : ""}" data-zone="${zoneNumber}" type="button">
+    <button
+      class="tower-zone ${selected ? "selected-zone" : ""}"
+      data-zone="${zoneNumber}"
+      type="button"
+      style="${projectZoneStyle(currentProject(), zoneNumber)}"
+    >
       <span class="zone-number">${zoneNumber}</span>
       <div class="office-work">
         ${zoneWorkLayers(currentProject(), zoneNumber)}
@@ -608,7 +765,7 @@ function delayCalloutForZone(zoneNumber) {
   });
 
   if (!roadblock) return "";
-  return `delay -${formatMoney(roadblock.delayDays * DAILY_DELAY_COST)}`;
+  return `delay -${formatMoney(roadblock.delayDays * dailyDelayCost())}`;
 }
 
 function workerToken(trade) {
@@ -693,18 +850,19 @@ function workerSprite() {
 }
 
 function tradeDice(trade) {
-  const rolling =
-    state.roundPhase === "rolling" &&
+  const rolling = state.roundPhase === "rolling" && !trade.finished;
+  const rolled =
+    !rolling &&
     !trade.finished &&
     trade.pendingSteps > 0 &&
     trade.lastRoll;
-  if (!rolling) return "";
+  if (!rolling && !rolled) return "";
 
   const pushed = trade.pushedUntil > Date.now();
+  const diceKey = rolling ? "dice-spin" : `dice-${trade.lastRoll}`;
   return `
-    <span class="trade-die rolling ${pushed ? "pushed" : ""}">
-      <img class="die-asset" src="${uiAsset("die")}" alt="" aria-hidden="true">
-      ${trade.lastRoll}
+    <span class="trade-die ${rolling ? "rolling" : "rolled"} ${pushed ? "pushed" : ""}">
+      <img class="die-asset" src="${uiAsset(diceKey)}" alt="" aria-hidden="true">
     </span>
   `;
 }
@@ -740,102 +898,127 @@ function roadblockMarker(roadblock) {
   const selected = state.selectedZone === roadblock.zone;
   const trade = getTrade(roadblock.tradeId);
   const timer = roadblockTimer(roadblock);
-  const asset = roadblockAsset(roadblock.visualKey);
   return `
     <span class="tower-blocker ${selected ? "selected" : ""}" style="--trade-color: ${trade.color}">
-      <img class="roadblock-asset" src="${asset}" alt="" aria-hidden="true">
-      <span class="barricade">
-        <i></i>
+      <span class="roadblock-alert" aria-hidden="true">!</span>
+      <span class="roadblock-trade">${trade.name}</span>
+      <span class="roadblock-days">
+        <b class="${timer < 0 ? "negative" : ""}">${timer}</b>
+        <small>${Math.abs(timer) === 1 ? "day" : "days"}</small>
       </span>
-      <b class="${timer < 0 ? "negative" : ""}">${timer}</b>
     </span>
   `;
 }
 
 function endScreen() {
   const margin = (state.profit / projectBudget()) * 100;
-  const quitButton = state.quitConfirm
-    ? `<button class="restart danger ${state.endActionIndex === 1 ? "selected-action" : ""}" type="button" data-confirm-quit>Confirm Quit</button>`
-    : `<button class="restart secondary ${state.endActionIndex === 1 ? "selected-action" : ""}" type="button" data-quit>Quit Game</button>`;
+  const failed = state.gameOver;
+  const scheduleVariance = projectDuration() - projectDay();
+  const resultTitle = failed ? "Career Over" : "Complete";
+  const resultLead = failed
+    ? "The project went over budget."
+    : "The project finished successfully.";
+  const resultSubcopy = failed
+    ? "Better planning. Better flow."
+    : "Strong flow. Clean handoffs. Keep building.";
+  const actionButtons = failed
+    ? `<button class="restart selected-action" type="button" data-game-over>Game Over</button>`
+    : `
+        <button class="restart ${state.endActionIndex === 0 ? "selected-action" : ""}" type="button" data-restart>${isFinalProjectInLevel() ? "Finish Round" : "Next Project"}</button>
+        ${state.quitConfirm
+          ? `<button class="restart danger ${state.endActionIndex === 1 ? "selected-action" : ""}" type="button" data-confirm-quit>Confirm Quit</button>`
+          : `<button class="restart secondary ${state.endActionIndex === 1 ? "selected-action" : ""}" type="button" data-quit>Quit Game</button>`}
+      `;
   return `
-    <section class="end-modal" role="dialog" aria-modal="true" aria-label="Project complete">
+    <section class="end-modal ${failed ? "end-failure" : "end-success"}" role="dialog" aria-modal="true" aria-label="${failed ? "Career over" : "Project complete"}">
+      <header class="end-result-topbar">
+        <strong><span>TAKT</span> BUILDER</strong>
+        <b>Project ${state.projectRound}: ${currentProject().name}</b>
+        <b>Day <span>${projectDay()}</span> / ${projectDuration()}</b>
+        <div class="end-profit-badge ${state.profit < 0 ? "bad" : ""}">
+          <span>Profit</span>
+          <strong>${formatMoney(state.profit)}</strong>
+        </div>
+      </header>
       <div class="end-screen">
-        <div>
-          <p class="eyebrow">${state.gameOver ? "Game Over" : `Project ${state.projectRound} Complete`}</p>
-          <h2>Total profit ${formatMoney(state.profit)} (${margin.toFixed(1)}%)</h2>
-          ${state.gameOver ? `<p class="final-score">Final score ${formatMoney(state.totalProfit)}</p>` : `<p class="final-score">Career profit ${formatMoney(state.totalProfit)}</p>`}
+        <header class="end-result-heading">
+          <span class="end-result-icon" aria-hidden="true"></span>
+          ${state.liquidatedDamages > 0 ? `<div class="damages-flash">Liquidated damages <strong>-${formatMoney(state.liquidatedDamages)}</strong></div>` : ""}
+          <div>
+            <p class="eyebrow">Project ${state.projectRound}</p>
+            <h2>${resultTitle}</h2>
+            <p class="end-result-lead">${resultLead}</p>
+            <p class="final-score">${resultSubcopy}</p>
+          </div>
+        </header>
+        <div class="end-profit-summary">
+          ${endStat("Total profit", `${formatMoney(state.profit)} (${margin.toFixed(1)}%)`, state.profit < 0 ? "bad" : "")}
+          ${endStat("Career profit", formatMoney(state.totalProfit), state.totalProfit < 0 ? "bad" : "")}
         </div>
         <div class="end-stats">
-          ${scheduleVarianceStat()}
-          ${stat("Costs", formatMoney(totalProjectCosts()))}
-          ${stat("Schedule efficiency", `${scheduleEfficiency().toFixed(0)}%`)}
+          ${endStat(scheduleVariance >= 0 ? "Days early" : "Days behind", `${Math.abs(scheduleVariance)} days`, scheduleVariance < 0 ? "bad" : "")}
+          ${endStat("Costs", formatMoney(totalProjectCosts()), failed ? "bad" : "")}
+          ${endStat("Schedule efficiency", `${scheduleEfficiency().toFixed(0)}%`, failed ? "bad" : "")}
         </div>
-        ${state.liquidatedDamages > 0 ? `<div class="damages-flash">Liquidated damages -${formatMoney(state.liquidatedDamages)}</div>` : ""}
         ${taktPlan()}
         <div class="end-actions">
-          <button class="restart ${state.endActionIndex === 0 ? "selected-action" : ""}" type="button" data-restart>${state.gameOver ? "New Game" : state.projectRound >= PROJECTS.length ? "Finish Game" : "Next Project"}</button>
-          ${state.gameOver ? "" : quitButton}
+          ${actionButtons}
         </div>
       </div>
     </section>
   `;
 }
 
+function endStat(label, value, tone = "") {
+  return `
+    <div class="end-stat ${tone}">
+      <span>${label}</span>
+      <strong>${value}</strong>
+    </div>
+  `;
+}
+
 function scheduleVarianceStat() {
-  const variance = projectDuration() - state.day;
+  const variance = projectDuration() - projectDay();
   if (variance >= 0) return stat("Days early", `${variance} days`);
   return stat("Days late", `${Math.abs(variance)} days`, "bad");
 }
 
-function leaderboardRows() {
-  const rows = loadLeaderboard();
-  if (rows.length === 0) return "<p>No scores yet</p>";
-  return rows
-    .map(
-      (row, index) => `
-        <div>
-          <span>${index + 1}. ${row.name}</span>
-          <span>Project ${row.project}</span>
-          <b>${formatMoney(row.earnings)}</b>
-        </div>
-      `,
-    )
-    .join("");
-}
-
 function taktPlan() {
-  const weeks = Array.from({ length: state.day }, (_, index) => index + 1);
+  const periodCount = Math.max(state.day, gameplayDuration());
+  const periods = Array.from({ length: periodCount }, (_, index) => index + 1);
+  const labels = scheduleHeaderLabels(periods);
   return `
     <div class="takt-plan">
       <div class="takt-title">
         <strong>As-Built Takt Plan</strong>
-        <span>Working days</span>
+        <span>Project day scale</span>
       </div>
-      <div class="zone-plan" style="--week-count: ${state.day}">
+      <div class="zone-plan" style="--week-count: ${periodCount}">
         ${tradeLegend()}
         <div class="zone-plan-header">
           <span>Zone</span>
-          <div>${weeks.map((week) => `<span>${week}</span>`).join("")}</div>
+          <div>${labels.map((label) => `<span>${label}</span>`).join("")}</div>
         </div>
         ${Array.from({ length: levelCount() }, (_, index) => index + 1)
-          .map((level) => taktLevelGroup(level, weeks))
+          .map((level) => taktLevelGroup(level, periods))
           .join("")}
       </div>
     </div>
   `;
 }
 
-function taktLevelGroup(level, weeks) {
+function taktLevelGroup(level, periods) {
   return `
     <div class="zone-plan-group">Level ${level}</div>
     ${zonesForPlanLevel(level)
-      .map((zone) => taktZoneRow(zone, weeks))
+      .map((zone) => taktZoneRow(zone, periods))
       .join("")}
   `;
 }
 
-function taktZoneRow(zone, weeks) {
-  const entries = zonePlanEntries(zone, weeks);
+function taktZoneRow(zone, periods) {
+  const entries = zonePlanEntries(zone, periods);
   return `
     <div class="zone-plan-row" style="--lane-count: ${entries.laneCount}">
       <strong>${zone}</strong>
@@ -853,16 +1036,16 @@ function zonePlanBars(bars) {
         <span
           class="plan-bar"
           style="--start: ${start}; --duration: ${end - start + 1}; --lane: ${lane}; background: ${trade.color}"
-          title="${trade.name}, ${PERIOD_LABEL.toLowerCase()} ${start}-${end}"
+          title="${trade.name}, ${PERIOD_LABEL.toLowerCase()} ${projectDay(start)}-${projectDay(end)}"
         ></span>
       `,
     )
     .join("");
 }
 
-function zonePlanEntries(zone, weeks) {
+function zonePlanEntries(zone, periods) {
   const spans = state.trades
-    .flatMap((trade) => zoneWorkSpans(trade, zone, weeks))
+    .flatMap((trade) => zoneWorkSpans(trade, zone, periods))
     .sort((a, b) => a.start - b.start || a.end - b.end);
 
   const laneEnds = [];
@@ -880,6 +1063,42 @@ function zonePlanEntries(zone, weeks) {
     bars,
     laneCount: Math.max(1, laneEnds.length),
   };
+}
+
+function scheduleHeaderLabels(periods) {
+  const maxDay = projectDay(periods.length);
+  const interval = scheduleLabelInterval(maxDay);
+  let nextLabel = interval;
+
+  return periods.map((period) => {
+    const previousDay = projectDay(period - 1);
+    const currentDay = projectDay(period);
+    const crossedLabel = previousDay < nextLabel && currentDay >= nextLabel;
+    const finalLabel =
+      period === periods.length && currentDay > 0 && currentDay < nextLabel;
+
+    if (!crossedLabel && !finalLabel) return "";
+
+    const label = finalLabel ? currentDay : nextLabel;
+    while (nextLabel <= currentDay) nextLabel += interval;
+    return label;
+  });
+}
+
+function scheduleLabelInterval(maxDay) {
+  const targetLabels = 7;
+  const rawInterval = Math.max(1, maxDay / targetLabels);
+  const magnitude = 10 ** Math.floor(Math.log10(rawInterval));
+  const normalized = rawInterval / magnitude;
+  const niceStep =
+    normalized <= 1
+      ? 1
+      : normalized <= 2
+        ? 2
+        : normalized <= 5
+          ? 5
+          : 10;
+  return niceStep * magnitude;
 }
 
 function tradeLegend() {
@@ -1007,20 +1226,25 @@ function projectSelectorColumns() {
 function bindSetup() {
   document.querySelectorAll("[data-mode]").forEach((button) => {
     button.addEventListener("click", () => {
-      const mode = MODES[Number(button.dataset.mode)];
-      if (state.projectRound === 1 && state.totalProfit === 0) {
-        startCampaign(mode);
-      } else {
-        resetProject(mode);
-      }
+      selectSetupMode(Number(button.dataset.mode));
     });
   });
+
+  document
+    .querySelector("[data-start-project]")
+    ?.addEventListener("click", () => startSetupProject());
 }
 
 function bindNameEntry() {
   document
     .querySelector("[data-home]")
     ?.addEventListener("click", restartAfterLeaderboard);
+  document
+    .querySelector("[data-save-score]")
+    ?.addEventListener("click", saveLeaderboardScore);
+  document
+    .querySelector("[data-skip-score]")
+    ?.addEventListener("click", returnToTitle);
   document.querySelectorAll("[data-letter]").forEach((button) => {
     button.addEventListener("click", () => {
       state.nameCursor = Number(button.dataset.letter);
@@ -1029,10 +1253,84 @@ function bindNameEntry() {
   });
 }
 
-function bindGameOver() {
-  document
-    .querySelector("[data-continue]")
-    ?.addEventListener("click", continueFromGameOver);
+function nameEntrySaveIndex() {
+  return nameEntryKeys().length;
+}
+
+function nameEntrySkipIndex() {
+  return nameEntrySaveIndex() + 1;
+}
+
+function nameEntryControlCount() {
+  return nameEntryKeys().length + 2;
+}
+
+function activateNameEntryControl() {
+  if (state.nameCursor === nameEntrySaveIndex()) {
+    saveLeaderboardScore();
+    return;
+  }
+
+  if (state.nameCursor === nameEntrySkipIndex()) {
+    returnToTitle();
+    return;
+  }
+
+  selectNameKey();
+}
+
+function moveNameEntryCursor(direction) {
+  const columns = 7;
+  const saveIndex = nameEntrySaveIndex();
+  const skipIndex = nameEntrySkipIndex();
+  const lastKeyIndex = saveIndex - 1;
+  const cursorInLetterGrid = state.nameCursor <= lastKeyIndex;
+
+  if (direction === "left") {
+    if (cursorInLetterGrid) {
+      const rowStart = Math.floor(state.nameCursor / columns) * columns;
+      const rowEnd = Math.min(rowStart + columns - 1, lastKeyIndex);
+      state.nameCursor =
+        state.nameCursor === rowStart ? rowEnd : state.nameCursor - 1;
+    } else {
+      state.nameCursor = Math.max(0, state.nameCursor - 1);
+    }
+    return;
+  }
+
+  if (direction === "right") {
+    if (cursorInLetterGrid) {
+      const rowStart = Math.floor(state.nameCursor / columns) * columns;
+      const rowEnd = Math.min(rowStart + columns - 1, lastKeyIndex);
+      state.nameCursor =
+        state.nameCursor === rowEnd ? rowStart : state.nameCursor + 1;
+    } else {
+      state.nameCursor = Math.min(
+        nameEntryControlCount() - 1,
+        state.nameCursor + 1,
+      );
+    }
+    return;
+  }
+
+  if (direction === "up") {
+    if (state.nameCursor === saveIndex) {
+      state.nameCursor = lastKeyIndex - 1;
+    } else if (state.nameCursor === skipIndex) {
+      state.nameCursor = lastKeyIndex;
+    } else {
+      state.nameCursor = Math.max(0, state.nameCursor - columns);
+    }
+    return;
+  }
+
+  if (state.nameCursor >= saveIndex) return;
+
+  if (state.nameCursor + columns > lastKeyIndex) {
+    state.nameCursor = state.nameCursor % columns < 4 ? saveIndex : skipIndex;
+  } else {
+    state.nameCursor += columns;
+  }
 }
 
 function bindScoreResult() {
@@ -1044,7 +1342,7 @@ function bindScoreResult() {
 function bindWin() {
   document
     .querySelector("[data-continue]")
-    ?.addEventListener("click", quitToLeaderboard);
+    ?.addEventListener("click", startNextProject);
 }
 
 function bindGame() {
@@ -1066,16 +1364,11 @@ function bindGame() {
   });
 
   document.querySelector("[data-restart]")?.addEventListener("click", () => {
-    stopTimer();
-    if (state.gameOver) {
-      state.projectRound = 1;
-      state.totalProfit = 0;
-      state.gameOver = false;
-      state.phase = "setup";
-      render();
-    } else {
-      startNextProject();
-    }
+    restartEndProject();
+  });
+
+  document.querySelector("[data-game-over]")?.addEventListener("click", () => {
+    returnToTitle();
   });
 
   document.querySelector("[data-quit]")?.addEventListener("click", () => {
@@ -1086,7 +1379,26 @@ function bindGame() {
 
   document
     .querySelector("[data-confirm-quit]")
-    ?.addEventListener("click", quitToLeaderboard);
+    ?.addEventListener("click", finishCareer);
+}
+
+function finishCareer() {
+  if (!leaderboardQualifies(state.totalProfit)) {
+    returnToTitle();
+    return;
+  }
+
+  quitToLeaderboard();
+}
+
+function restartEndProject() {
+  stopTimer();
+  if (state.gameOver) {
+    returnToTitle();
+    return;
+  }
+
+  startNextProject();
 }
 
 window.addEventListener("keydown", (event) => {
@@ -1108,26 +1420,44 @@ window.addEventListener("keydown", (event) => {
   if (state.phase === "title") {
     if (state.projectSelectorOpen) {
       const projectSelectorColumnCount = projectSelectorColumns();
+      const projectSelectorCloseIndex = PROJECTS.length;
+      const projectSelectorLastProjectIndex = PROJECTS.length - 1;
 
       if (event.key === "ArrowLeft") {
-        state.projectSelectorIndex = Math.max(0, state.projectSelectorIndex - 1);
+        if (state.projectSelectorIndex !== projectSelectorCloseIndex) {
+          state.projectSelectorIndex = Math.max(0, state.projectSelectorIndex - 1);
+        }
       } else if (event.key === "ArrowRight") {
-        state.projectSelectorIndex = Math.min(
-          PROJECTS.length - 1,
-          state.projectSelectorIndex + 1,
-        );
+        if (state.projectSelectorIndex !== projectSelectorCloseIndex) {
+          state.projectSelectorIndex = Math.min(
+            projectSelectorCloseIndex,
+            state.projectSelectorIndex + 1,
+          );
+        }
       } else if (event.key === "ArrowUp") {
-        state.projectSelectorIndex = Math.max(
-          0,
-          state.projectSelectorIndex - projectSelectorColumnCount,
-        );
+        state.projectSelectorIndex =
+          state.projectSelectorIndex === projectSelectorCloseIndex
+            ? projectSelectorLastProjectIndex
+            : Math.max(
+                0,
+                state.projectSelectorIndex - projectSelectorColumnCount,
+              );
       } else if (event.key === "ArrowDown") {
-        state.projectSelectorIndex = Math.min(
-          PROJECTS.length - 1,
-          state.projectSelectorIndex + projectSelectorColumnCount,
-        );
+        if (state.projectSelectorIndex !== projectSelectorCloseIndex) {
+          const nextIndex =
+            state.projectSelectorIndex + projectSelectorColumnCount;
+          state.projectSelectorIndex =
+            nextIndex > projectSelectorLastProjectIndex
+              ? projectSelectorCloseIndex
+              : nextIndex;
+        }
       } else if (event.code === "Space" || event.key === "Enter") {
         event.preventDefault();
+        if (state.projectSelectorIndex === projectSelectorCloseIndex) {
+          state.projectSelectorOpen = false;
+          render();
+          return;
+        }
         selectTestProject(state.projectSelectorIndex);
         return;
       } else {
@@ -1139,14 +1469,18 @@ window.addEventListener("keydown", (event) => {
       return;
     }
 
-    if (event.key.toLowerCase() === "s") {
+    if (
+      event.key.toLowerCase() === "s" ||
+      event.key === "Enter" ||
+      event.code === "Space"
+    ) {
       event.preventDefault();
       state.phase = "setup";
       render();
       return;
     }
 
-    if (event.code === "Space") {
+    if (event.key.toLowerCase() === "p") {
       event.preventDefault();
       state.projectSelectorOpen = true;
       state.projectSelectorIndex = Math.max(0, state.projectRound - 1);
@@ -1158,59 +1492,59 @@ window.addEventListener("keydown", (event) => {
   if (state.phase === "setup") {
     if (["1", "2", "3"].includes(event.key)) {
       event.preventDefault();
-      const mode = MODES[Number(event.key) - 1];
-      if (state.projectRound === 1 && state.totalProfit === 0) {
-        startCampaign(mode);
-      } else {
-        resetProject(mode);
-      }
+      state.setupModeIndex = Number(event.key) - 1;
+      startSetupProject(state.setupModeIndex);
+      return;
     }
-    return;
-  }
 
-  if (state.phase === "gameOver") {
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      selectSetupMode(setupModeIndex() - 1);
+      return;
+    }
+
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      selectSetupMode(setupModeIndex() + 1);
+      return;
+    }
+
     if (
-      ["s", "enter"].includes(event.key.toLowerCase()) ||
-      event.code === "Space"
+      event.code === "Space" ||
+      event.key === "Enter" ||
+      event.key.toLowerCase() === "s"
     ) {
       event.preventDefault();
-      continueFromGameOver();
+      startSetupProject();
     }
     return;
   }
 
   if (state.phase === "nameEntry") {
-    if (state.scoreSaved) {
-      if (
-        ["s", "enter", "end"].includes(event.key.toLowerCase()) ||
-        event.code === "Space"
-      ) {
-        event.preventDefault();
-        restartAfterLeaderboard();
-      }
-      return;
-    }
-
-    const totalKeys = NAME_KEYS.length + NAME_ACTIONS.length;
     if (event.key === "ArrowLeft") {
-      state.nameCursor = Math.max(0, state.nameCursor - 1);
+      moveNameEntryCursor("left");
     } else if (event.key === "ArrowRight") {
-      state.nameCursor = Math.min(totalKeys - 1, state.nameCursor + 1);
+      moveNameEntryCursor("right");
     } else if (event.key === "ArrowUp") {
-      state.nameCursor = Math.max(0, state.nameCursor - 7);
+      moveNameEntryCursor("up");
     } else if (event.key === "ArrowDown") {
-      state.nameCursor = Math.min(totalKeys - 1, state.nameCursor + 7);
-    } else if (event.code === "Space") {
+      moveNameEntryCursor("down");
+    } else if (event.code === "Space" || event.key === "Enter") {
       event.preventDefault();
-      selectNameKey();
+      activateNameEntryControl();
       return;
-    } else if (event.key === "Enter" || event.key === "End") {
+    } else if (event.key === "End") {
       event.preventDefault();
       saveLeaderboardScore();
       return;
     } else if (event.key === "Backspace") {
       event.preventDefault();
       state.scoreName = state.scoreName.slice(0, -1);
+    } else if (/^[a-z]$/i.test(event.key)) {
+      event.preventDefault();
+      if (state.scoreName.length < 12) {
+        state.scoreName += event.key.toUpperCase();
+      }
     } else {
       return;
     }
@@ -1236,12 +1570,24 @@ window.addEventListener("keydown", (event) => {
       event.code === "Space"
     ) {
       event.preventDefault();
-      quitToLeaderboard();
+      startNextProject();
     }
     return;
   }
 
-  if (state.phase === "ended") {
+  if (state.phase === "ended" || state.phase === "gameOver") {
+    if (state.gameOver) {
+      if (
+        event.key.toLowerCase() === "s" ||
+        event.code === "Space" ||
+        event.key === "Enter"
+      ) {
+        event.preventDefault();
+        returnToTitle();
+      }
+      return;
+    }
+
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       state.endActionIndex = state.endActionIndex === 0 ? 1 : 0;
@@ -1267,16 +1613,16 @@ window.addEventListener("keydown", (event) => {
 
     if (event.key.toLowerCase() === "s") {
       event.preventDefault();
-      startNextProject();
+      restartEndProject();
       return;
     }
 
     if (event.code === "Space" || event.key === "Enter") {
       event.preventDefault();
       if (state.endActionIndex === 0) {
-        startNextProject();
+        restartEndProject();
       } else if (state.quitConfirm) {
-        quitToLeaderboard();
+        finishCareer();
       } else {
         state.quitConfirm = true;
         render();
@@ -1291,6 +1637,20 @@ window.addEventListener("keydown", (event) => {
   const currentColumn = visualColumn(state.selectedZone);
 
   if (usesPlanGrid()) {
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+      const spatialZone = projectZoneForDirection(
+        currentProject(),
+        state.selectedZone,
+        event.key,
+      );
+      if (spatialZone !== undefined) {
+        state.selectedZone = spatialZone;
+        event.preventDefault();
+        render();
+        return;
+      }
+    }
+
     const currentRow = visualRow(state.selectedZone);
     if (event.key === "ArrowUp") {
       state.selectedZone = zoneFromPlanPosition(currentRow - 1, currentColumn);
@@ -1361,4 +1721,10 @@ window.addEventListener("pointerdown", noteUserActivity);
 window.addEventListener("touchstart", noteUserActivity, { passive: true });
 
 setRenderCallback(render);
+setRoadblockAppearedCallback(playRoadblockAppearedSound);
+setRoadblockResolvedCallback(playRoadblockResolvedSound);
+setWorkerBlockedCallback(playWorkerBlockedSound);
+setWorkerRoadblockedCallback(playWorkerRoadblockedSound);
+setWorkerPushedCallback(playWorkerPushedSound);
+setWorkerWorkCallback(playWorkerWorkSound);
 render();

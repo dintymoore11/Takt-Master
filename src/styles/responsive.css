@@ -1,0 +1,874 @@
+@media (max-width: 980px) {
+  .setup-screen,
+  .game-shell {
+    padding: 0;
+    overflow: auto;
+  }
+
+  .mode-grid,
+  .title-screen,
+  .topbar,
+  .playfield,
+  .end-screen {
+    grid-template-columns: 1fr;
+  }
+
+  .title-screen {
+    grid-template-rows: auto auto auto auto;
+    gap: 18px;
+    min-height: 100vh;
+    padding: 18px;
+    overflow: auto;
+  }
+
+  .title-screen .title-copy,
+  .title-screen .title-start-area,
+  .title-screen .title-sidebar,
+  .title-screen .title-sponsor-logo {
+    grid-column: 1;
+    justify-self: center;
+    width: 100%;
+    max-width: 620px;
+    min-width: 0;
+  }
+
+  .title-screen .title-copy {
+    grid-row: 1;
+    grid-template-columns: 1fr;
+    padding-top: 86px;
+  }
+
+  .title-screen .title-copy h1 {
+    grid-column: 1;
+    font-size: clamp(48px, 15vw, 82px);
+    line-height: 0.94;
+    transform: none;
+  }
+
+  .title-screen .title-start-area {
+    grid-row: 2;
+    margin: 0;
+  }
+
+  .title-screen .title-start-button {
+    width: min(100%, 460px);
+    min-width: 0;
+    min-height: 76px;
+    font-size: clamp(24px, 7vw, 32px);
+  }
+
+  .title-screen .title-sidebar {
+    grid-row: 3;
+  }
+
+  .title-screen .title-board {
+    height: auto;
+    max-width: 100%;
+  }
+
+  .title-screen .title-sponsor-logo {
+    grid-row: 4;
+    margin: 0;
+    width: min(220px, 44vw);
+  }
+
+  .title-screen .title-powered-by {
+    justify-self: start;
+  }
+
+  .title-screen .title-supported-by {
+    justify-self: end;
+  }
+
+  .title-screen .title-board.leaderboard > .title-leaderboard-labels,
+  .title-screen .title-board.leaderboard > div:not(.title-board-heading):not(.title-leaderboard-labels),
+  .title-screen .title-board.leaderboard > div:not(.title-board-heading):not(.title-leaderboard-labels):first-of-type {
+    grid-template-columns: 34px minmax(0, 1fr) minmax(48px, auto) minmax(82px, auto);
+    gap: 8px;
+  }
+
+  .title-screen .title-leaderboard-labels span:first-child {
+    font-size: 0;
+  }
+
+  .title-screen .title-leaderboard-labels span:first-child::after {
+    content: "#";
+    font-size: 11px;
+  }
+
+  .project-selector-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .unity-frame {
+    width: 100vw;
+  }
+
+  .stage {
+    min-height: 100vh;
+    max-height: none;
+    aspect-ratio: auto;
+    overflow: auto;
+  }
+
+  .topbar {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .topbar-timeline {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-title strong {
+    font-size: 31px;
+  }
+
+  .project-readout {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .project-readout strong {
+    font-size: 18px;
+  }
+
+  .profit-readout {
+    justify-items: start;
+  }
+
+  .profit-readout strong {
+    font-size: 34px;
+  }
+
+  .game-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .playfield {
+    order: -1;
+    overflow-x: auto;
+    justify-content: start;
+    padding: 22px 12px 10px;
+  }
+
+  .scoreboard,
+  .end-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tower {
+    width: max-content;
+    min-width: 760px;
+    transform: none;
+  }
+
+  .tower-level,
+  .ground {
+    min-width: 720px;
+  }
+
+  h1 {
+    font-size: 38px;
+  }
+
+  .summary {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 980px) {
+  .project-office.game-shell {
+    overflow: hidden;
+  }
+
+  .project-office .unity-frame {
+    width: min(100vw, calc(100vh * 16 / 9));
+  }
+
+  .project-office .stage {
+    min-height: 0;
+    max-height: 100vh;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .project-office .topbar {
+    grid-template-columns: minmax(220px, 0.9fr) minmax(250px, 1fr) minmax(145px, 0.42fr) minmax(190px, 0.58fr);
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .project-office .topbar-title strong {
+    font-size: 28px;
+  }
+
+  .project-office .project-readout {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .project-office .project-readout strong,
+  .project-office .day-readout strong {
+    font-size: 18px;
+  }
+
+  .project-office .profit-readout strong {
+    font-size: 28px;
+  }
+
+  .project-office .game-layout,
+  .project-office .playfield {
+    padding: 0;
+  }
+
+  .project-office .tower {
+    min-width: 0;
+    width: 74.92%;
+    transform: none;
+  }
+
+  .project-office .tower-level,
+  .project-office .ground {
+    min-width: 0;
+  }
+
+  .project-office .trades-panel {
+    width: 168px;
+    transform: scale(0.82);
+    transform-origin: left top;
+  }
+}
+
+/* 1080p fit pass for arcade-style full-screen views. */
+@media (min-width: 981px) {
+  .title-screen,
+  .leaderboard-entry-screen,
+  .takt-legend-screen,
+  .project-setup {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .title-screen {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.54fr);
+    grid-template-rows: minmax(350px, 1fr) 156px 88px;
+    gap: 12px 22px;
+    padding: 16px 20px 14px;
+  }
+
+  .title-copy {
+    grid-row: 1;
+    width: min(680px, 68vw);
+    padding-top: 4px;
+  }
+
+  .title-hook {
+    width: 54px;
+    height: 66px;
+  }
+
+  .title-copy h1 {
+    font-size: clamp(76px, 8.5vw, 132px);
+  }
+
+  .title-copy > p {
+    margin: 12px 0 10px;
+    padding: 6px 20px;
+    font-size: 18px;
+  }
+
+  .title-start-button {
+    min-width: min(460px, 56vw);
+    min-height: 66px;
+    font-size: clamp(30px, 3.6vw, 46px);
+  }
+
+  .title-start-area {
+    grid-row: 3;
+    margin-top: -2px;
+  }
+
+  .title-start-icon {
+    border-top-width: 17px;
+    border-bottom-width: 17px;
+    border-left-width: 27px;
+  }
+
+  .title-start-help {
+    margin-top: 5px;
+    font-size: 12px;
+  }
+
+  .title-trades {
+    grid-row: 2;
+    width: 210px;
+    padding: 8px 12px;
+  }
+
+  .title-trades > strong {
+    margin-bottom: 5px;
+    font-size: 12px;
+  }
+
+  .title-trade {
+    min-height: 19px;
+    grid-template-columns: 18px 15px 1fr;
+    font-size: 10px;
+  }
+
+  .title-trade b {
+    width: 15px;
+    height: 15px;
+    font-size: 10px;
+  }
+
+  .title-trade strong {
+    font-size: 10px;
+  }
+
+  .title-flow-preview {
+    grid-row: 2;
+    width: min(690px, calc(100% - 238px));
+    min-height: 156px;
+    margin-left: 228px;
+    padding: 8px 10px 10px;
+  }
+
+  .title-schedule-header {
+    grid-template-columns: 56px repeat(13, 1fr);
+    font-size: 12px;
+  }
+
+  .title-schedule-grid {
+    height: 122px;
+    margin-top: 5px;
+    background-size: calc(100% / 13) 18px;
+  }
+
+  .title-schedule-grid span {
+    top: calc((var(--bar-row) - 1) * 14px + 4px);
+    height: 12px;
+  }
+
+  .title-feature-row {
+    gap: 10px;
+  }
+
+  .title-feature {
+    min-height: 78px;
+    grid-template-columns: 44px 1fr;
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .title-feature span {
+    width: 38px;
+    height: 38px;
+    border-width: 4px;
+  }
+
+  .title-feature strong {
+    font-size: 13px;
+  }
+
+  .title-feature p {
+    margin-top: 3px;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .title-footer {
+    padding: 5px 34px;
+    font-size: 12px;
+    letter-spacing: 3px;
+  }
+
+  .title-sponsor-logo {
+    grid-row: 3;
+    width: 190px;
+    padding: 8px 10px;
+  }
+
+  .title-powered-by {
+    margin-left: 8px;
+  }
+
+  .title-supported-by {
+    margin-right: 8px;
+  }
+
+  .title-sponsor-logo span {
+    font-size: 10px;
+  }
+
+  .title-board,
+  .leaderboard-entry-board {
+    padding: 18px 22px;
+  }
+
+  .title-board.leaderboard,
+  .leaderboard-entry-board.leaderboard {
+    gap: 2px;
+  }
+
+  .title-board-heading {
+    grid-template-columns: 58px 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+  }
+
+  .title-trophy {
+    width: 48px;
+    height: 48px;
+  }
+
+  .title-board-heading strong {
+    font-size: clamp(28px, 2.7vw, 40px);
+  }
+
+  .title-board-heading small {
+    font-size: 13px;
+  }
+
+  .title-leaderboard-labels {
+    grid-template-columns: 44px minmax(0, 1fr) minmax(58px, auto) minmax(104px, auto);
+    padding: 0 7px 5px;
+    font-size: 10px;
+  }
+
+  .title-board.leaderboard > div:not(.title-board-heading):not(.title-leaderboard-labels) {
+    min-height: 22px;
+    grid-template-columns: 44px minmax(0, 1fr) minmax(58px, auto) minmax(104px, auto);
+    gap: 9px;
+    padding: 1px 7px;
+    font-size: 13px;
+  }
+
+  .title-board.leaderboard > div:not(.title-board-heading):not(.title-leaderboard-labels) b {
+    font-size: 13px;
+  }
+
+  .project-briefing-card {
+    width: min(1100px, calc(100vw - 44px));
+    min-height: 0;
+    max-height: calc(100vh - 44px);
+    padding: 22px 30px 18px;
+    gap: 10px;
+  }
+
+  .briefing-header {
+    min-height: 178px;
+  }
+
+  .briefing-logo-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 20px;
+  }
+
+  .briefing-logo strong {
+    font-size: 31px;
+  }
+
+  .briefing-logo strong span {
+    font-size: 42px;
+  }
+
+  .briefing-hero {
+    height: 232px;
+  }
+
+  .briefing-copy {
+    margin-top: -82px;
+  }
+
+  .project-briefing-card h1 {
+    font-size: clamp(40px, 4.2vw, 58px);
+  }
+
+  .project-briefing-card .setup-subtitle {
+    font-size: 20px;
+  }
+
+  .project-briefing-card .summary {
+    font-size: 18px;
+    line-height: 1.25;
+  }
+
+  .setup-stat-row .stat {
+    min-height: 54px;
+    padding: 7px 10px;
+  }
+
+  .setup-mode-grid .mode-button {
+    min-height: 112px;
+    grid-template-columns: 58px minmax(0, 1fr);
+    padding: 12px 14px;
+  }
+
+  .setup-mode-grid .mode-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .setup-start-button {
+    min-height: 56px;
+    min-width: 280px;
+    font-size: 22px;
+  }
+
+  .leaderboard-entry-screen {
+    grid-template-columns: minmax(500px, 0.9fr) minmax(560px, 0.94fr);
+    grid-template-rows: 82px 1fr 42px;
+    gap: 12px 24px;
+    padding: 16px 42px 12px;
+  }
+
+  .leaderboard-entry-brand {
+    min-height: 64px;
+  }
+
+  .leaderboard-entry-brand strong {
+    font-size: clamp(42px, 4.8vw, 70px);
+  }
+
+  .leaderboard-entry-card {
+    gap: 12px;
+    padding: 20px 26px;
+  }
+
+  .leaderboard-entry-heading {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .leaderboard-entry-trophy {
+    width: 62px;
+    height: 62px;
+  }
+
+  .leaderboard-entry-heading h1 {
+    font-size: clamp(28px, 2.4vw, 36px);
+  }
+
+  .leaderboard-entry-heading p {
+    margin-top: 6px;
+    font-size: 16px;
+  }
+
+  .leaderboard-entry-heading strong {
+    margin-top: 5px;
+    font-size: 18px;
+  }
+
+  .leaderboard-results {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .leaderboard-results > strong,
+  .leaderboard-name-section > strong {
+    font-size: 15px;
+  }
+
+  .leaderboard-results > div {
+    min-height: 68px;
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .leaderboard-result-icon {
+    width: 40px;
+    height: 40px;
+    border-width: 4px;
+  }
+
+  .leaderboard-results small {
+    font-size: 11px;
+  }
+
+  .leaderboard-results b {
+    font-size: clamp(24px, 2.1vw, 32px);
+  }
+
+  .leaderboard-entry-screen .name-display {
+    min-height: 48px;
+    font-size: 24px;
+  }
+
+  .leaderboard-letter-grid {
+    gap: 6px;
+  }
+
+  .leaderboard-letter-grid button {
+    min-height: 38px;
+    font-size: 18px;
+  }
+
+  .leaderboard-entry-actions {
+    gap: 22px;
+  }
+
+  .leaderboard-save-button,
+  .leaderboard-skip-button {
+    min-width: 180px;
+    min-height: 46px;
+    font-size: 20px;
+  }
+
+  .leaderboard-entry-footer {
+    padding: 7px 34px;
+    font-size: 14px;
+  }
+
+  .takt-legend-screen {
+    grid-template-rows: 72px 1fr;
+    padding: 12px 18px 16px;
+  }
+
+  .legend-brand {
+    min-height: 58px;
+    padding-left: 42px;
+  }
+
+  .legend-brand strong {
+    font-size: clamp(42px, 4.6vw, 68px);
+  }
+
+  .legend-card {
+    grid-template-columns: minmax(220px, 0.74fr) minmax(300px, 0.92fr) minmax(220px, 0.74fr);
+    gap: 7px 42px;
+    padding: 8px 9vw 0;
+  }
+
+  .legend-stars span {
+    width: 34px;
+    height: 34px;
+  }
+
+  .legend-stars b {
+    width: 52px;
+    height: 52px;
+  }
+
+  .legend-card h1 {
+    font-size: clamp(46px, 4.9vw, 70px);
+  }
+
+  .legend-card > p {
+    font-size: clamp(18px, 1.8vw, 26px);
+  }
+
+  .legend-card h2 {
+    font-size: clamp(30px, 3.2vw, 44px);
+  }
+
+  .legend-card h2 span {
+    font-size: clamp(50px, 5.6vw, 84px);
+  }
+
+  .legend-trophy {
+    width: min(300px, 22vw);
+  }
+
+  .legend-results > div {
+    min-height: 172px;
+    width: min(300px, 100%);
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .legend-results small {
+    font-size: 17px;
+  }
+
+  .legend-results strong {
+    font-size: clamp(32px, 3.3vw, 46px);
+  }
+
+  .legend-continue-button {
+    min-width: min(430px, 58vw);
+    min-height: 60px;
+    font-size: clamp(28px, 2.8vw, 40px);
+  }
+
+  .end-modal {
+    padding: 102px 20px 18px;
+  }
+
+  .end-result-topbar {
+    min-height: 78px;
+    grid-template-columns: minmax(240px, 0.66fr) minmax(270px, 1fr) auto minmax(220px, 0.42fr);
+    gap: 18px;
+    padding: 10px 16px;
+  }
+
+  .end-result-topbar > strong {
+    font-size: clamp(24px, 2.5vw, 38px);
+  }
+
+  .end-result-topbar > b {
+    font-size: clamp(18px, 1.7vw, 26px);
+  }
+
+  .end-profit-badge strong {
+    font-size: clamp(27px, 2.7vw, 42px);
+  }
+
+  .end-screen {
+    width: min(1100px, calc(100vw - 300px));
+    padding: 16px 22px 18px;
+    gap: 10px 14px;
+  }
+
+  .end-result-heading {
+    min-height: 82px;
+    grid-template-columns: 66px minmax(0, 1fr);
+    gap: 14px;
+    padding-right: 250px;
+  }
+
+  .end-result-icon {
+    width: 58px;
+    height: 58px;
+  }
+
+  .end-screen .eyebrow {
+    font-size: 16px;
+  }
+
+  .end-screen h2 {
+    font-size: clamp(36px, 3.2vw, 48px);
+  }
+
+  .end-result-lead {
+    margin-top: 8px;
+    font-size: 16px;
+  }
+
+  .end-screen .final-score {
+    font-size: 14px;
+  }
+
+  .end-stat {
+    min-height: 66px;
+    padding: 10px 13px;
+  }
+
+  .end-stat span {
+    font-size: 11px;
+  }
+
+  .end-stat strong {
+    font-size: 21px;
+  }
+
+  .end-modal .takt-plan {
+    max-height: min(42vh, 365px);
+    padding: 10px;
+  }
+
+  .end-modal .takt-title {
+    margin-bottom: 6px;
+  }
+
+  .end-modal .takt-title strong {
+    font-size: 15px;
+  }
+
+  .end-modal .zone-plan {
+    padding: 6px;
+  }
+
+  .end-modal .trade-legend {
+    width: 150px;
+    font-size: 9px;
+  }
+
+  .end-modal .end-actions {
+    gap: 20px;
+    padding-top: 2px;
+  }
+
+  .end-modal .restart {
+    min-width: 200px;
+    min-height: 48px;
+    font-size: 17px;
+  }
+
+  .title-screen {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.52fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 12px 22px;
+  }
+
+  .title-copy {
+    align-self: start;
+    width: min(680px, 58vw);
+    padding-top: 48px;
+  }
+
+  .title-copy h1 {
+    font-size: clamp(78px, 8vw, 124px);
+  }
+
+  .title-copy > p,
+  .title-hook,
+  .title-flow-preview,
+  .title-start-help,
+  .title-footer {
+    display: none;
+  }
+
+  .title-start-area {
+    grid-row: 2;
+    align-self: center;
+    justify-self: center;
+    margin: -18px 0 0;
+  }
+
+  .title-start-button {
+    min-width: min(460px, 46vw);
+    min-height: 70px;
+  }
+
+  .title-sponsor-logo {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    width: 184px;
+    margin-top: 18px;
+  }
+
+  .title-powered-by {
+    justify-self: start;
+    margin-left: 20px;
+  }
+
+  .title-supported-by {
+    justify-self: end;
+    margin-right: 20px;
+  }
+
+  .title-sidebar {
+    grid-row: 1 / span 2;
+  }
+
+  .title-board-heading strong {
+    color: #073763;
+  }
+
+  .title-board.leaderboard > div:not(.title-board-heading):not(.title-leaderboard-labels) span:nth-child(2) {
+    color: #d8ecfb;
+  }
+}

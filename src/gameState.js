@@ -7,6 +7,7 @@ export function createInitialState() {
     roundPhase: "idle",
     mode: null,
     projectRound: 1,
+    setupModeIndex: 0,
     totalProfit: 0,
     gameOver: false,
     day: 0,

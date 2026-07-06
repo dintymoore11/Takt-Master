@@ -14,10 +14,49 @@ import {
 } from "./gameConfig.js";
 import { createInitialState, createTradeState } from "./gameState.js";
 
+const LEADERBOARD_LIMIT = 20;
+const PUSH_COST_MARKUP = 1.12;
+
 let renderCallback = () => {};
+let workerBlockedCallback = () => {};
+let workerPushedCallback = () => {};
+let workerWorkCallback = () => {};
+let roadblockAppearedCallback = () => {};
+let roadblockResolvedCallback = () => {};
+let workerRoadblockedCallback = () => {};
+let rollDurationMs = ROLL_MS;
 
 export function setRenderCallback(callback) {
   renderCallback = callback;
+}
+
+export function setWorkerBlockedCallback(callback) {
+  workerBlockedCallback = callback;
+}
+
+export function setWorkerPushedCallback(callback) {
+  workerPushedCallback = callback;
+}
+
+export function setWorkerWorkCallback(callback) {
+  workerWorkCallback = callback;
+}
+
+export function setRoadblockAppearedCallback(callback) {
+  roadblockAppearedCallback = callback;
+}
+
+export function setRoadblockResolvedCallback(callback) {
+  roadblockResolvedCallback = callback;
+}
+
+export function setWorkerRoadblockedCallback(callback) {
+  workerRoadblockedCallback = callback;
+}
+
+export function setRollDurationMs(durationMs) {
+  if (!Number.isFinite(durationMs) || durationMs <= 0) return;
+  rollDurationMs = durationMs;
 }
 
 function notifyRender() {
@@ -30,8 +69,20 @@ export function createTrades() {
   return tradeTemplates().map(createTradeState);
 }
 
+export function projectTemplateIndex(round = state.projectRound) {
+  return ((round - 1) % PROJECTS.length + PROJECTS.length) % PROJECTS.length;
+}
+
+export function campaignLevel(round = state.projectRound) {
+  return Math.floor((round - 1) / PROJECTS.length) + 1;
+}
+
+export function isFinalProjectInLevel(round = state.projectRound) {
+  return projectTemplateIndex(round) === PROJECTS.length - 1;
+}
+
 export function currentProject() {
-  return PROJECTS[Math.min(state.projectRound - 1, PROJECTS.length - 1)];
+  return PROJECTS[projectTemplateIndex()];
 }
 
 export function tradeTemplates() {
@@ -97,10 +148,14 @@ export function resetProject(mode) {
 }
 
 export function startNextProject() {
-  if (state.projectRound >= PROJECTS.length) {
-    quitToLeaderboard();
+  if (isFinalProjectInLevel() && state.phase !== "win") {
+    state.phase = "win";
+    state.quitConfirm = false;
+    state.endActionIndex = 0;
+    notifyRender();
     return;
   }
+
   state.projectRound += 1;
   state.quitConfirm = false;
   state.phase = "setup";
@@ -126,7 +181,7 @@ export function startRound() {
   maybeSpawnRoadblock();
   rollForTrades();
   notifyRender();
-  state.timer = window.setTimeout(startMovementPhase, ROLL_MS);
+  state.timer = window.setTimeout(startMovementPhase, rollDurationMs);
 }
 
 export function rollForTrades() {
@@ -136,11 +191,7 @@ export function rollForTrades() {
 
     const activeRoadblock = tradeBlockedByRoadblock(trade);
     if (activeRoadblock) {
-      trade.delayedToday = true;
-      trade.waitReason = "roadblock";
-      markTradeFrustrated(trade, "roadblock");
-      reduceMorale(trade, 6);
-      addLog(`${trade.name} lost a day to ${activeRoadblock.label}.`);
+      delayTradeForRoadblock(trade, activeRoadblock);
       return;
     }
 
@@ -222,12 +273,7 @@ export function advanceTradesOneStep() {
     const activeRoadblock = tradeBlockedByRoadblock(trade);
 
     if (activeRoadblock) {
-      trade.delayedToday = true;
-      trade.waitReason = "roadblock";
-      trade.pendingSteps = 0;
-      markTradeFrustrated(trade, "roadblock");
-      reduceMorale(trade, 6);
-      addLog(`${trade.name} lost a day to ${activeRoadblock.label}.`);
+      delayTradeForRoadblock(trade, activeRoadblock, { stopMovement: true });
       return;
     }
 
@@ -245,7 +291,25 @@ export function advanceTradesOneStep() {
   return moved;
 }
 
-export function moveTradeOneZone(trade) {
+function delayTradeForRoadblock(
+  trade,
+  roadblock,
+  { stopMovement = false } = {},
+) {
+  trade.delayedToday = true;
+  trade.waitReason = "roadblock";
+  if (stopMovement) trade.pendingSteps = 0;
+
+  if (roadblock.lastDelayNotifiedDay === state.day) return;
+
+  roadblock.lastDelayNotifiedDay = state.day;
+  markTradeFrustrated(trade, "roadblock");
+  reduceMorale(trade, 6);
+  workerRoadblockedCallback(trade, roadblock);
+  addLog(`${trade.name} lost a day to ${roadblock.label}.`);
+}
+
+export function moveTradeOneZone(trade, { ignoreSpacing = false } = {}) {
   const targetZone = trade.zone + 1;
   if (targetZone <= zoneCount()) {
     const occupant = zoneOccupant(targetZone, trade.id);
@@ -253,16 +317,9 @@ export function moveTradeOneZone(trade) {
       trade.delayedToday = true;
       trade.waitReason = "blocked";
       markTradeFrustrated(trade, "blocked");
+      workerBlockedCallback(trade, occupant);
       addLog(
         `${trade.name} waited for ${occupant.name} to clear zone ${targetZone}.`,
-      );
-      return false;
-    }
-    if (state.zoneWorkThisRound.has(targetZone)) {
-      trade.delayedToday = true;
-      trade.waitReason = "spacing";
-      addLog(
-        `${trade.name} waited because zone ${targetZone} was already worked today.`,
       );
       return false;
     }
@@ -293,8 +350,10 @@ export function moveTradeOneZone(trade) {
 export function recordZoneWork(trade, zone) {
   state.zoneWorkThisRound.add(zone);
   trade.zoneWorkWeeks[zone] = trade.zoneWorkWeeks[zone] ?? [];
-  if (!trade.zoneWorkWeeks[zone].includes(state.day)) {
+  const alreadyWorkedToday = trade.zoneWorkWeeks[zone].includes(state.day);
+  if (!alreadyWorkedToday) {
     trade.zoneWorkWeeks[zone].push(state.day);
+    workerWorkCallback(trade, zone);
   }
 }
 
@@ -323,7 +382,7 @@ export function collectDailyCosts() {
   state.trades.forEach((trade) => {
     if (trade.finished || trade.zone === 0) return;
     const moraleMultiplier = 1 + (100 - trade.morale) / 100;
-    const cost = Math.round(trade.baseCost * moraleMultiplier);
+    const cost = scaledLaborCost(trade.baseCost, moraleMultiplier);
     state.laborCost += cost;
     state.profit -= cost;
   });
@@ -347,7 +406,7 @@ export function maybeSpawnRoadblock() {
   );
   if (alreadyExists) return;
 
-  state.roadblocks.push({
+  const roadblock = {
     id: crypto.randomUUID(),
     tradeId: trade.id,
     zone,
@@ -360,37 +419,85 @@ export function maybeSpawnRoadblock() {
     visualKey: "barricade",
     resolved: false,
     delayDays: 0,
-  });
+    lastDelayNotifiedDay: null,
+  };
+  state.roadblocks.push(roadblock);
+  roadblockAppearedCallback(roadblock, trade);
   addLog(`Roadblock spawned for ${trade.name} at zone ${zone}.`);
 }
 
 export function roadblockSpawnChance() {
+  const level = campaignLevel();
   return Math.min(
-    0.78,
-    ROADBLOCK_SPAWN_CHANCE + (state.projectRound - 1) * 0.055,
+    0.84,
+    ROADBLOCK_SPAWN_CHANCE +
+      (currentProject().roadblockChanceBonus ?? 0) +
+      projectTemplateIndex() * 0.032 +
+      (level - 1) * 0.14,
   );
 }
 
 export function projectBudget() {
-  return BASE_PROJECT_BUDGET;
+  return currentProject().budget ?? BASE_PROJECT_BUDGET;
 }
 
 export function projectDuration() {
+  return currentProject().duration ?? gameplayDuration();
+}
+
+export function gameplayDuration() {
   return Math.max(20, BASE_PROJECT_DURATION - (state.projectRound - 1) * 2);
 }
 
+export function projectDay(day = state.day) {
+  return Math.round(day * (projectDuration() / gameplayDuration()));
+}
+
+export function projectCostScale() {
+  return projectBudget() / BASE_PROJECT_BUDGET;
+}
+
+export function scaledLaborCost(baseCost, moraleMultiplier = 1) {
+  return Math.round(baseCost * moraleMultiplier * projectCostScale());
+}
+
+export function dailyDelayCost() {
+  return Math.round(DAILY_DELAY_COST * projectCostScale());
+}
+
+export function pushCost(trade = null) {
+  const projectTrades = currentProject().trades;
+  const averageTradeCost = projectTrades.length
+    ? projectTrades.reduce((sum, item) => sum + item.baseCost, 0) /
+      projectTrades.length
+    : PUSH_COST;
+  const baseCost = trade?.baseCost ?? averageTradeCost;
+  return Math.round(baseCost * PUSH_COST_MARKUP * projectCostScale());
+}
+
+export function liquidatedDamagesPerDay() {
+  return Math.round(LIQUIDATED_DAMAGES_PER_DAY * projectCostScale());
+}
+
 export function moveStepMs() {
-  return Math.max(150, MOVE_STEP_MS - (state.projectRound - 1) * 18);
+  return Math.max(
+    115,
+    MOVE_STEP_MS - projectTemplateIndex() * 12 - (campaignLevel() - 1) * 70,
+  );
 }
 
 export function roundPauseMs() {
-  return Math.max(300, ROUND_PAUSE_MS - (state.projectRound - 1) * 22);
+  return Math.max(
+    220,
+    ROUND_PAUSE_MS - projectTemplateIndex() * 16 - (campaignLevel() - 1) * 90,
+  );
 }
 
 export function updateLiquidatedDamages() {
-  if (state.day <= projectDuration()) return;
-  state.liquidatedDamages += LIQUIDATED_DAMAGES_PER_DAY;
-  state.profit -= LIQUIDATED_DAMAGES_PER_DAY;
+  if (state.day <= gameplayDuration()) return;
+  const damages = liquidatedDamagesPerDay();
+  state.liquidatedDamages += damages;
+  state.profit -= damages;
 }
 
 export function updateRoadblockDelays() {
@@ -400,8 +507,9 @@ export function updateRoadblockDelays() {
     if (trade.zone >= roadblock.zone && !trade.finished) {
       roadblock.delayDays += 1;
       state.totalDelayDays += 1;
-      state.delayCost += DAILY_DELAY_COST;
-      state.profit -= DAILY_DELAY_COST;
+      const cost = dailyDelayCost();
+      state.delayCost += cost;
+      state.profit -= cost;
     }
   });
 }
@@ -423,6 +531,7 @@ export function resolveSelectedRoadblock() {
     return;
   }
   roadblock.resolved = true;
+  roadblockResolvedCallback(roadblock, getTrade(roadblock.tradeId));
   addLog(`${getTrade(roadblock.tradeId).name} roadblock resolved.`);
   cleanupResolvedRoadblocks();
   notifyRender();
@@ -448,18 +557,24 @@ export function pushSelectedTrade(
     return;
   }
 
-  trade.pushes += 1;
+  const pendingStepsBeforePush = trade.pendingSteps;
   trade.pendingSteps += 1;
-  trade.lastRoll = Math.min(
-    Math.max(trade.lastRoll ?? 0, 0) + 1,
-    Math.max(...state.mode.dice),
-  );
+
+  if (!moveTradeOneZone(trade, { ignoreSpacing: true })) {
+    trade.pendingSteps = pendingStepsBeforePush;
+    notifyRender();
+    return;
+  }
+
+  trade.pushes += 1;
   trade.pushedUntil = Date.now() + 1800;
-  trade.pushFlash = `-${formatMoney(PUSH_COST)}`;
+  const cost = pushCost(trade);
+  trade.pushFlash = `-${formatMoney(cost)}`;
   reduceMorale(trade, 9);
-  state.pushCost += PUSH_COST;
-  state.profit -= PUSH_COST;
-  addLog(`${trade.name} pushed for ${formatMoney(PUSH_COST)}.`);
+  state.pushCost += cost;
+  state.profit -= cost;
+  workerPushedCallback(trade);
+  addLog(`${trade.name} pushed forward for ${formatMoney(cost)}.`);
   notifyRender();
   window.setTimeout(notifyRender, 1850);
 }
@@ -469,11 +584,7 @@ export function endProject() {
   applyLiquidatedDamages();
   state.totalProfit += state.profit;
   state.gameOver = state.profit < 0;
-  state.phase = state.gameOver
-    ? "gameOver"
-    : state.projectRound >= PROJECTS.length
-      ? "win"
-      : "ended";
+  state.phase = state.gameOver ? "gameOver" : "ended";
   state.quitConfirm = false;
   state.endActionIndex = 0;
   if (state.gameOver) {
@@ -512,7 +623,7 @@ export function returnToTitle() {
 export function applyLiquidatedDamages() {
   state.liquidatedDamages = Math.max(
     state.liquidatedDamages,
-    Math.max(0, state.day - projectDuration()) * LIQUIDATED_DAMAGES_PER_DAY,
+    Math.max(0, state.day - gameplayDuration()) * liquidatedDamagesPerDay(),
   );
 }
 
@@ -588,8 +699,7 @@ export function usesPlanGrid() {
     "wind-farm",
     "housing",
     "solar-farm",
-    "airport",
-    "hotel-site",
+    "industrial-plant",
   ].includes(currentProject().type);
 }
 
@@ -662,8 +772,14 @@ export function formatMoney(amount) {
 
 export function leaderboardQualifies(score) {
   const rows = loadLeaderboard();
-  if (rows.length < 8) return true;
+  if (rows.length < LEADERBOARD_LIMIT) return true;
   return score > Math.min(...rows.map((row) => row.earnings));
+}
+
+export function completedProjectTotal() {
+  return state.gameOver
+    ? Math.max(0, state.projectRound - 1)
+    : state.projectRound;
 }
 
 export function loadLeaderboard() {
@@ -677,23 +793,27 @@ export function loadLeaderboard() {
 export function saveLeaderboardScore() {
   if (state.scoreSaved) return;
   if (!leaderboardQualifies(state.totalProfit)) {
-    state.phase = "scoreResult";
-    notifyRender();
+    returnToTitle();
     return;
   }
   const name =
     (state.scoreName || "AAA").trim().toUpperCase().slice(0, 12) || "AAA";
   const rows = [
     ...loadLeaderboard(),
-    { name, project: state.projectRound, earnings: state.totalProfit },
+    {
+      name,
+      project: state.projectRound,
+      projectsCompleted: completedProjectTotal(),
+      earnings: state.totalProfit,
+    },
   ]
     .sort((a, b) => b.earnings - a.earnings)
-    .slice(0, 8);
+    .slice(0, LEADERBOARD_LIMIT);
 
   localStorage.setItem("taktTowersLeaderboard", JSON.stringify(rows));
   state.scoreName = name;
   state.scoreSaved = true;
-  notifyRender();
+  returnToTitle();
 }
 
 export function restartAfterLeaderboard() {
@@ -701,9 +821,12 @@ export function restartAfterLeaderboard() {
 }
 
 export function continueFromGameOver() {
-  state.phase = leaderboardQualifies(state.totalProfit)
-    ? "nameEntry"
-    : "scoreResult";
+  if (!leaderboardQualifies(state.totalProfit)) {
+    returnToTitle();
+    return;
+  }
+
+  state.phase = "nameEntry";
   notifyRender();
 }
 

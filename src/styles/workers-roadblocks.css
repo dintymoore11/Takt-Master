@@ -1,0 +1,1044 @@
+.worker {
+  position: relative;
+  width: 90px;
+  height: 130px;
+  display: block;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: var(--worker-asset);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: drop-shadow(0 6px 0 rgba(29, 38, 48, 0.62))
+    drop-shadow(0 0 12px rgba(255, 255, 255, 0.86))
+    drop-shadow(0 0 9px var(--trade-color));
+  color: #111;
+  font-size: 10px;
+  font-weight: 900;
+  animation: work-bob 0.72s ease-in-out infinite alternate;
+}
+
+.sprite-worker {
+  width: 93px;
+  height: 140px;
+  overflow: visible;
+  background-image: none;
+  filter:
+    drop-shadow(0 6px 0 rgba(29, 38, 48, 0.42))
+    drop-shadow(0 0 8px rgba(255, 255, 255, 0.72));
+}
+
+.worker-sprite-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: block;
+  transform-origin: center bottom;
+}
+
+.sprite-worker.entered-from-right .worker-sprite-viewport {
+  transform: scaleX(-1);
+}
+
+.worker-sprite-sheet {
+  position: absolute;
+  left: 0;
+  top: calc(var(--sprite-row) * -100%);
+  width: calc(var(--sprite-columns) * 100%);
+  height: calc(var(--sprite-rows) * 100%);
+  display: block;
+  background-image: var(--sprite-sheet);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  animation: worker-sprite-cycle var(--sprite-duration) var(--sprite-timing)
+    infinite;
+  will-change: transform;
+}
+
+.sprite-worker .hardhat,
+.sprite-worker .head,
+.sprite-worker .torso,
+.sprite-worker .arm,
+.sprite-worker .leg,
+.sprite-worker .tool,
+.sprite-worker .worker-label {
+  display: none;
+}
+
+.sprite-worker.worker-state-working .worker-sprite-sheet {
+  animation-direction: alternate;
+}
+
+.sprite-worker.worker-state-idle {
+  animation: worker-idle-breathe 1.7s ease-in-out infinite alternate;
+}
+
+.sprite-worker.worker-state-idle .worker-sprite-sheet,
+.sprite-worker.worker-state-waiting .worker-sprite-sheet,
+.sprite-worker.worker-state-angry .worker-sprite-sheet {
+  animation: none;
+}
+
+.sprite-worker.worker-state-waiting {
+  animation: worker-waiting-shift 0.72s ease-in-out infinite alternate;
+}
+
+.sprite-worker.worker-state-angry {
+  animation: frustration-shake 0.14s linear infinite;
+  filter:
+    drop-shadow(0 6px 0 rgba(29, 38, 48, 0.42))
+    drop-shadow(0 0 10px rgba(232, 93, 79, 0.7));
+}
+
+@keyframes worker-sprite-cycle {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-75%);
+  }
+}
+
+@keyframes worker-idle-breathe {
+  from {
+    transform: translateY(0) scale(1);
+  }
+  to {
+    transform: translateY(-3px) scale(1.01);
+  }
+}
+
+@keyframes worker-waiting-shift {
+  from {
+    transform: translateX(-2px) translateY(0) rotate(-1.5deg);
+  }
+  to {
+    transform: translateX(2px) translateY(-2px) rotate(1.5deg);
+  }
+}
+
+.worker::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  right: 4px;
+  bottom: 5px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(29, 38, 48, 0.26);
+  transform: skewX(-18deg);
+}
+
+.worker.entered-from-left {
+  animation:
+    worker-enter-left 0.26s ease-out both,
+    work-bob 0.72s 0.26s ease-in-out infinite alternate;
+}
+
+.worker.entered-from-right {
+  animation:
+    worker-enter-right 0.26s ease-out both,
+    work-bob 0.72s 0.26s ease-in-out infinite alternate;
+}
+
+.worker.entered-from-up {
+  animation:
+    worker-enter-up 0.26s ease-out both,
+    work-bob 0.72s 0.26s ease-in-out infinite alternate;
+}
+
+.worker.entered-from-down {
+  animation:
+    worker-enter-down 0.26s ease-out both,
+    work-bob 0.72s 0.26s ease-in-out infinite alternate;
+}
+
+.worker span {
+  position: absolute;
+  display: block;
+}
+
+.hardhat {
+  left: 13px;
+  top: 3px;
+  width: 23px;
+  height: 12px;
+  border: 2px solid var(--line);
+  border-bottom: 0;
+  border-radius: 14px 14px 4px 4px;
+  background: var(--trade-color);
+  box-shadow: inset 0 4px rgba(255, 255, 255, 0.45);
+}
+
+.hardhat::after {
+  content: "";
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  bottom: -3px;
+  height: 5px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--trade-color);
+}
+
+.head {
+  left: 15px;
+  top: 14px;
+  width: 19px;
+  height: 19px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: #c98552;
+}
+
+.head::before,
+.head::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.head::before {
+  left: 4px;
+}
+
+.head::after {
+  right: 4px;
+}
+
+.torso {
+  left: 12px;
+  top: 33px;
+  width: 25px;
+  height: 24px;
+  border: 2px solid var(--line);
+  border-radius: 6px 6px 3px 3px;
+  background:
+    linear-gradient(
+      70deg,
+      transparent 0 42%,
+      rgba(255, 255, 255, 0.7) 42% 48%,
+      transparent 48%
+    ),
+    linear-gradient(
+      -70deg,
+      transparent 0 42%,
+      rgba(255, 255, 255, 0.7) 42% 48%,
+      transparent 48%
+    ),
+    #f07f2f;
+}
+
+.arm {
+  top: 37px;
+  width: 8px;
+  height: 24px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #c98552;
+  transform-origin: top center;
+}
+
+.arm-left {
+  left: 7px;
+  transform: rotate(22deg);
+}
+
+.arm-right {
+  right: -9px;
+  transform: rotate(-38deg);
+  animation: tool-arm 0.5s ease-in-out infinite alternate;
+}
+
+.leg {
+  top: 55px;
+  width: 9px;
+  height: 18px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #24537a;
+  transform-origin: top center;
+}
+
+.leg-left {
+  left: 15px;
+  transform: rotate(8deg);
+}
+
+.leg-right {
+  right: 14px;
+  transform: rotate(-8deg);
+}
+
+.tool {
+  right: -16px;
+  top: 43px;
+  width: 24px;
+  height: 7px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #d7dde0;
+  transform: rotate(-18deg);
+  transform-origin: left center;
+  animation: tool-action 0.5s ease-in-out infinite alternate;
+}
+
+.worker-label {
+  left: 0;
+  right: 0;
+  bottom: -12px;
+  padding: 2px 0;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffffff, #e6eef7);
+  color: var(--line);
+  text-align: center;
+  line-height: 1;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 2px 0 rgba(29, 38, 48, 0.22);
+}
+
+.worker .trade-die {
+  right: -30px;
+  top: -38px;
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 18px;
+  z-index: 14;
+  box-shadow: none;
+}
+
+.worker .trade-die.rolling {
+  right: -28px;
+  top: -36px;
+  width: 70px;
+  height: 70px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #111;
+  font-size: 36px;
+  z-index: 8;
+  box-shadow: none;
+  animation: dice-roll-pop var(--dice-roll-duration, 2s) ease-in-out both;
+}
+
+.worker .trade-die:not(.rolling):not(.rolled):empty {
+  display: none;
+}
+
+.worker-push-cost {
+  right: -58px;
+  top: 18px;
+  z-index: 12;
+  min-width: 58px;
+  padding: 4px 7px 5px;
+  border: 2px solid #7f1d1d;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff1f2, #fecaca);
+  color: #b91c1c;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 1000;
+  text-align: center;
+  letter-spacing: 0;
+  box-shadow:
+    0 3px 0 rgba(127, 29, 29, 0.38),
+    0 0 14px rgba(239, 68, 68, 0.48);
+  text-shadow: 0 1px 0 #fff;
+  animation: push-cost-pop 1.8s ease-out both;
+}
+
+.worker-push-cost::before {
+  content: "$ $";
+  position: absolute;
+  left: -19px;
+  top: -12px;
+  color: #dc2626;
+  font-size: 13px;
+  line-height: 1;
+  text-shadow:
+    0 1px 0 #fff,
+    0 0 8px rgba(220, 38, 38, 0.72);
+  transform: rotate(-14deg);
+}
+
+@keyframes push-cost-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-8px, 8px) scale(0.72);
+  }
+  16% {
+    opacity: 1;
+    transform: translate(0, -4px) scale(1.08);
+  }
+  62% {
+    opacity: 1;
+    transform: translate(0, -10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, -20px) scale(0.94);
+  }
+}
+
+.worker.frustrated {
+  animation: frustration-shake 0.16s linear infinite;
+}
+
+.worker.frustrated .head {
+  background: #d58a5d;
+}
+
+.worker.frustrated .tool {
+  animation: frustrated-tool 0.18s linear infinite alternate;
+}
+
+.frustration-blocked .worker-label,
+.frustration-roadblock .worker-label {
+  background: #ffe6e1;
+}
+
+.worker-electrical .tool {
+  width: 24px;
+  height: 4px;
+  border-color: #236ee8;
+  background: #f3c537;
+  box-shadow: 0 5px 0 #e34242;
+  transform: rotate(14deg);
+}
+
+.worker-plumbing .tool {
+  width: 20px;
+  border-radius: 4px;
+  background: #2388d1;
+  transform: rotate(40deg);
+}
+
+.worker-drywall .tool {
+  width: 20px;
+  height: 14px;
+  border-radius: 2px;
+  background: #e9e5dc;
+  transform: rotate(-6deg);
+}
+
+.worker-painting .tool {
+  width: 26px;
+  height: 7px;
+  background: #78b7e8;
+  transform: rotate(-10deg);
+}
+
+.worker-finishes .tool {
+  width: 16px;
+  height: 14px;
+  border-radius: 2px;
+  background: #fff6ba;
+  transform: rotate(0deg);
+}
+
+.worker-hvac .tool {
+  width: 24px;
+  height: 10px;
+  border-radius: 3px;
+  background: #b7c4cb;
+  transform: rotate(-6deg);
+}
+
+.worker-fire .tool {
+  width: 22px;
+  height: 6px;
+  background: #d9362e;
+  transform: rotate(0deg);
+}
+
+.worker-cleanroom .tool {
+  width: 20px;
+  height: 12px;
+  border-radius: 999px;
+  background: #d8fbff;
+  box-shadow: 0 0 10px #a8e7f0;
+  transform: rotate(-10deg);
+}
+
+.worker-equipment .tool {
+  width: 24px;
+  height: 16px;
+  border-radius: 4px;
+  background: #f5fbff;
+  transform: rotate(0deg);
+}
+
+.worker-raised-floor .tool {
+  width: 24px;
+  height: 14px;
+  border-radius: 2px;
+  background: #c4d7e2;
+  transform: rotate(-8deg);
+}
+
+.worker-power .tool {
+  width: 24px;
+  height: 5px;
+  background: #ffd84d;
+  box-shadow: 0 0 10px #ffd84d;
+  transform: rotate(8deg);
+}
+
+.worker-backup-power .tool {
+  width: 20px;
+  height: 14px;
+  border-radius: 4px;
+  background: #ff8a2a;
+  box-shadow: 0 0 10px rgba(255, 138, 42, 0.8);
+  transform: rotate(0deg);
+}
+
+.worker-cooling .tool {
+  width: 26px;
+  height: 10px;
+  border-radius: 999px;
+  background: #32c7dc;
+  box-shadow: 0 0 10px rgba(50, 199, 220, 0.85);
+  transform: rotate(-6deg);
+}
+
+.worker-data-cabling .tool {
+  width: 28px;
+  height: 4px;
+  border-color: #7d7cff;
+  background: #50e3ff;
+  box-shadow: 0 5px 0 #7d7cff;
+  transform: rotate(15deg);
+}
+
+.worker-rack-install .tool {
+  width: 17px;
+  height: 24px;
+  border-radius: 3px;
+  background: #4f6170;
+  transform: rotate(0deg);
+}
+
+.worker-server-equipment .tool {
+  width: 21px;
+  height: 15px;
+  border-radius: 3px;
+  background: #2fd17c;
+  box-shadow: 0 0 12px rgba(47, 209, 124, 0.85);
+  transform: rotate(0deg);
+}
+
+.worker-commissioning .tool {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #d66dff;
+  box-shadow: 0 0 14px rgba(214, 109, 255, 0.9);
+  transform: rotate(0deg);
+}
+
+.worker-access-roads .tool {
+  width: 26px;
+  height: 8px;
+  background: #b9975b;
+  transform: rotate(-15deg);
+}
+
+.worker-turbine-foundation .tool {
+  width: 22px;
+  height: 14px;
+  border-radius: 50%;
+  background: #8d9298;
+  transform: rotate(0deg);
+}
+
+.worker-tower-erection .tool,
+.worker-nacelle-install .tool,
+.worker-blade-install .tool {
+  width: 26px;
+  height: 6px;
+  background: #f5f7fb;
+  transform: rotate(-10deg);
+}
+
+.worker-collection-cabling .tool {
+  width: 28px;
+  height: 4px;
+  background: #ffcf4d;
+  box-shadow: 0 5px 0 #8a6d1e;
+  transform: rotate(16deg);
+}
+
+.worker-substation .tool {
+  width: 22px;
+  height: 16px;
+  border-radius: 3px;
+  background: #b583e8;
+  transform: rotate(0deg);
+}
+
+.worker-wind-commissioning .tool {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #4ac77b;
+  box-shadow: 0 0 14px rgba(74, 199, 123, 0.85);
+  transform: rotate(0deg);
+}
+
+.worker.selected {
+  outline: 4px solid #fff;
+  box-shadow:
+    0 0 0 6px var(--blue),
+    inset 0 4px rgba(255, 255, 255, 0.35);
+}
+
+.worker:nth-child(2n) {
+  animation-delay: -0.25s;
+}
+
+.worker:nth-child(3n) {
+  animation-delay: -0.45s;
+}
+
+.worker.moving {
+  animation: work-move 0.34s ease-in-out infinite alternate;
+}
+
+.worker.moving.entered-from-left,
+.worker.moving.entered-from-right,
+.worker.moving.entered-from-up,
+.worker.moving.entered-from-down {
+  animation: work-move 0.34s ease-in-out infinite alternate;
+}
+
+.worker.moving.entered-from-left {
+  animation:
+    worker-enter-left 0.42s ease-out both,
+    work-move 0.34s 0.42s ease-in-out infinite alternate;
+}
+
+.worker.moving.entered-from-right {
+  animation:
+    worker-enter-right 0.42s ease-out both,
+    work-move 0.34s 0.42s ease-in-out infinite alternate;
+}
+
+.worker.moving.entered-from-up {
+  animation:
+    worker-enter-up 0.42s ease-out both,
+    work-move 0.34s 0.42s ease-in-out infinite alternate;
+}
+
+.worker.moving.entered-from-down {
+  animation:
+    worker-enter-down 0.42s ease-out both,
+    work-move 0.34s 0.42s ease-in-out infinite alternate;
+}
+
+@keyframes work-bob {
+  from {
+    transform: translateY(0) rotate(-2deg);
+  }
+  to {
+    transform: translateY(-7px) rotate(2deg);
+  }
+}
+
+@keyframes worker-enter-left {
+  from {
+    transform: translateX(-120%) scale(0.96);
+  }
+  to {
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes worker-enter-right {
+  from {
+    transform: translateX(120%) scale(0.96);
+  }
+  to {
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes worker-enter-up {
+  from {
+    transform: translateY(-105%) scale(0.96);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes worker-enter-down {
+  from {
+    transform: translateY(105%) scale(0.96);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes frustration-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(-2deg);
+  }
+  25% {
+    transform: translateX(-4px) rotate(-6deg);
+  }
+  75% {
+    transform: translateX(4px) rotate(5deg);
+  }
+}
+
+@keyframes frustrated-tool {
+  to {
+    transform: rotate(18deg) translateX(5px);
+  }
+}
+
+@keyframes tool-arm {
+  from {
+    transform: rotate(-28deg);
+  }
+  to {
+    transform: rotate(-58deg);
+  }
+}
+
+@keyframes tool-action {
+  from {
+    transform: rotate(-10deg) translateX(0);
+  }
+  to {
+    transform: rotate(-28deg) translateX(4px);
+  }
+}
+
+@keyframes drill-vibrate {
+  50% {
+    transform: translate(2px, 1px) rotate(-18deg);
+  }
+}
+
+@keyframes wire-pull {
+  to {
+    transform: translateX(20px);
+  }
+}
+
+@keyframes wrench-turn {
+  to {
+    transform: rotate(84deg);
+  }
+}
+
+@keyframes panel-lift {
+  to {
+    transform: translateY(-10px) rotate(-2deg);
+  }
+}
+
+@keyframes roller-stroke {
+  to {
+    transform: translateX(54px) rotate(6deg);
+  }
+}
+
+@keyframes fixture-glow {
+  to {
+    box-shadow: 0 0 30px 10px #fff2a0;
+  }
+}
+
+@keyframes duct-swing {
+  to {
+    transform: translateX(-8px) rotate(-2deg);
+  }
+}
+
+@keyframes sprinkler-drop {
+  to {
+    transform: translateY(6px);
+    box-shadow: 0 8px 0 -4px rgba(35, 136, 209, 0.9);
+  }
+}
+
+@keyframes sterile-shine {
+  to {
+    transform: translateX(8px);
+    box-shadow:
+      inset 0 0 24px rgba(255, 255, 255, 0.95),
+      0 0 28px rgba(168, 231, 240, 0.95);
+  }
+}
+
+@keyframes equipment-set {
+  to {
+    transform: translateX(12px);
+  }
+}
+
+@keyframes power-pulse {
+  to {
+    opacity: 0.45;
+    transform: scaleX(0.72);
+  }
+}
+
+@keyframes cooling-flow {
+  to {
+    transform: translateX(8px);
+    box-shadow: 0 0 28px rgba(50, 199, 220, 0.95);
+  }
+}
+
+@keyframes rack-set {
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes server-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes commissioning-scan {
+  to {
+    transform: scale(1.24);
+    opacity: 0.45;
+  }
+}
+
+@keyframes road-grade {
+  to {
+    transform: translateX(18px);
+  }
+}
+
+@keyframes foundation-pour {
+  to {
+    transform: scale(1.18);
+    opacity: 0.62;
+  }
+}
+
+@keyframes tower-rise {
+  from {
+    transform: translateY(18px) scaleY(0.55);
+  }
+  to {
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+@keyframes turbine-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes firework-pop {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes ribbon-fall {
+  to {
+    transform: rotate(8deg) translateY(10px);
+  }
+}
+
+@keyframes work-move {
+  from {
+    transform: translateX(-3px) translateY(-2px) rotate(-4deg);
+  }
+  to {
+    transform: translateX(5px) translateY(-10px) rotate(4deg);
+  }
+}
+
+.tower-blocker {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 12;
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  grid-template-rows: auto 1fr;
+  gap: 2px 7px;
+  align-items: center;
+  min-width: 132px;
+  max-width: min(88%, 178px);
+  min-height: 50px;
+  padding: 7px 7px 7px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9px;
+  background:
+    linear-gradient(112deg, rgba(24, 25, 25, 0.96) 0 64%, rgba(242, 232, 211, 0.98) 64% 100%);
+  box-shadow:
+    0 10px 18px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.72),
+    inset 0 0 0 4px rgba(255, 255, 255, 0.12);
+  color: #f7f2e9;
+  font-weight: 900;
+  text-transform: uppercase;
+  animation: blocker-pulse 0.9s ease-in-out infinite alternate;
+}
+
+.tower-blocker::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+}
+
+.tower-blocker::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  width: calc(64% - 12px);
+  height: 9px;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(135deg, #f18a05 0 11px, #f8efe2 11px 22px);
+  opacity: 0.92;
+}
+
+@keyframes blocker-pulse {
+  from {
+    transform: translateY(0) rotate(-1deg);
+  }
+  to {
+    transform: translateY(-2px) rotate(1deg);
+  }
+}
+
+.roadblock-alert {
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  display: block;
+  transform: translateX(-50%);
+  border: 2px solid rgba(255, 236, 220, 0.86);
+  border-radius: 50%;
+  background: var(--trade-color);
+  color: #fff;
+  font-size: 25px;
+  line-height: 26px;
+  text-align: center;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--trade-color) 74%, transparent),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.28);
+}
+
+.roadblock-trade {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  z-index: 1;
+  display: block;
+  max-width: 92px;
+  overflow: hidden;
+  color: #f8f4ea;
+  font-size: 13px;
+  line-height: 1.08;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.62);
+}
+
+.roadblock-days {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  min-height: 42px;
+  color: #17191b;
+}
+
+.roadblock-days b {
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.roadblock-days b.negative {
+  color: var(--bad);
+}
+
+.roadblock-days small {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+
+.tower-blocker.selected {
+  outline: 4px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.delay-callout {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 48px;
+  z-index: 3;
+  display: block;
+  padding: 4px 6px;
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--bad);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 3px 0 rgba(29, 38, 48, 0.35);
+}
+
+.ground {
+  height: 34px;
+  margin-left: 68px;
+  border: 2px solid rgba(66, 80, 82, 0.62);
+  border-top: 0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(37, 49, 58, 0.16) 0 12px,
+      transparent 12px 24px
+    ),
+    linear-gradient(#9fd79a, #6eb56a);
+}
