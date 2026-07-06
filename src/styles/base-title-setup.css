@@ -1196,6 +1196,10 @@ button {
   text-transform: uppercase;
 }
 
+.title-leaderboard-labels span {
+  display: block;
+}
+
 .title-leaderboard-labels span:last-child {
   color: #8cff2e;
   text-align: right;
