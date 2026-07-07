@@ -262,6 +262,39 @@ button {
   font-weight: 900;
 }
 
+.project-selector-levels {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0 0 13px;
+}
+
+.project-selector-levels button {
+  min-height: 38px;
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(29, 38, 48, 0.2);
+}
+
+.project-selector-levels button:hover,
+.project-selector-levels button:focus-visible,
+.project-selector-levels button.active {
+  background: linear-gradient(180deg, #fff8c7, #ffd166);
+  outline: 3px solid #f4c95d;
+  outline-offset: 1px;
+}
+
+.project-selector-levels button.selected {
+  background: linear-gradient(180deg, #ffffff, var(--blue-pale));
+  outline: 4px solid var(--blue);
+  outline-offset: 2px;
+}
+
 .project-selector-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

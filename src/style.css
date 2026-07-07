@@ -2,5 +2,6 @@
 @import "./styles/game-shell.css";
 @import "./styles/project-boards.css";
 @import "./styles/workers-roadblocks.css";
+@import "./styles/arcade-controls.css";
 @import "./styles/results-overlays.css";
 @import "./styles/responsive.css";

@@ -5,7 +5,7 @@ export const PROJECTS = [
     levels: 3,
     zonesPerLevel: 6,
     budget: 4500000,
-    duration: 180,
+    duration: 135,
     roadblockChanceBonus: 0.05,
     summary: "Office building",
     trades: [
@@ -28,7 +28,7 @@ export const PROJECTS = [
     levels: 4,
     zonesPerLevel: 6,
     budget: 23500000,
-    duration: 340,
+    duration: 255,
     summary: "Hospital project",
     trades: [
       { key: "framing", name: "Framing", color: "#7d8790", baseCost: 1850 },
@@ -480,15 +480,15 @@ export const NAME_KEYS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 export const NAME_ACTIONS = ["SPACE", "DEL", "SAVE"];
 
 export const MODES = [
-  {
-    name: "High Variability",
-    dice: [1, 2, 3, 4, 5, 6],
-    note: "Fast swings, rough planning",
-  },
+  { name: "Low Variability", dice: [3, 4], note: "Reliable takt rhythm" },
   {
     name: "Medium Variability",
     dice: [2, 3, 4, 5],
     note: "Balanced production",
   },
-  { name: "Low Variability", dice: [3, 4], note: "Reliable takt rhythm" },
+  {
+    name: "High Variability",
+    dice: [1, 2, 3, 4, 5, 6],
+    note: "Fast swings, rough planning",
+  },
 ];

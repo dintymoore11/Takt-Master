@@ -7,6 +7,7 @@ export function createInitialState() {
     roundPhase: "idle",
     mode: null,
     projectRound: 1,
+    careerStartRound: 1,
     setupModeIndex: 0,
     totalProfit: 0,
     gameOver: false,
@@ -19,10 +20,16 @@ export function createInitialState() {
     liquidatedDamages: 0,
     selectedTradeIndex: 0,
     selectedZone: 1,
+    players: [
+      { id: 1, active: true, selectedTradeIndex: 0, selectedZone: 1 },
+      { id: 2, active: false, selectedTradeIndex: 0, selectedZone: 1 },
+    ],
+    hadTwoPlayers: false,
     focusArea: "zones",
     selectedRoadblockIndex: 0,
     trades: [],
     roadblocks: [],
+    identifiedTradeIds: new Set(),
     logs: [],
     timer: null,
     zoneWorkThisRound: new Set(),
@@ -34,6 +41,11 @@ export function createInitialState() {
     endActionIndex: 0,
     projectSelectorOpen: false,
     projectSelectorIndex: 0,
+    projectSelectorArea: "projects",
+    projectSelectorLevel: 1,
+    idleWarningOpen: false,
+    idleWarningRemaining: 30,
+    idleWarningActionIndex: 0,
   };
 }
 

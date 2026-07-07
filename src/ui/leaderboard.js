@@ -49,7 +49,7 @@ export function leaderboardRows({
       (row, index) => `
         <div class="${leaderboardRowClass(row)}">
           <span>${index + 1}</span>
-          <span>${row?.name ?? "-"}</span>
+          <span class="leaderboard-player-cell">${row ? playerName(row) : "-"}</span>
           <span>${row ? projectsCompleted(row) : "-"}</span>
           <b>${row ? formatMoney(row.earnings) : "-"}</b>
         </div>
@@ -60,6 +60,14 @@ export function leaderboardRows({
 
 function projectsCompleted(row) {
   return row.projectsCompleted ?? row.project ?? 0;
+}
+
+function playerName(row) {
+  const twoPlayerIcon =
+    row.players > 1
+      ? `<span class="two-player-icon" aria-label="Two players" title="Two players"></span>`
+      : "";
+  return `${row.name}${twoPlayerIcon}`;
 }
 
 function leaderboardRowClass(row) {

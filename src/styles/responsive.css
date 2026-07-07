@@ -100,6 +100,10 @@
     grid-template-columns: 1fr;
   }
 
+  .project-selector-levels {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
   .unity-frame {
     width: 100vw;
   }

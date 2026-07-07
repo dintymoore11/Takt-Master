@@ -140,9 +140,21 @@ export const AUDIO_ASSETS = {
   "held-up-6": assetUrl("./audio/held-up-6.wav"),
   "held-up-7": assetUrl("./audio/held-up-7.wav"),
   "held-up-8": assetUrl("./audio/held-up-8.wav"),
+  "slowed-1": assetUrl("./audio/slowed-1.wav"),
+  "slowed-2": assetUrl("./audio/slowed-2.wav"),
+  "slowed-3": assetUrl("./audio/slowed-3.wav"),
   "worker-pushed-1": assetUrl("./audio/worker-pushed-1.wav"),
   "worker-pushed-2": assetUrl("./audio/worker-pushed-2.wav"),
   "worker-pushed-3": assetUrl("./audio/worker-pushed-3.wav"),
+  "worker-pushed-4": assetUrl("./audio/worker-pushed-4.wav"),
+  "worker-pushed-5": assetUrl("./audio/worker-pushed-5.wav"),
+  "worker-pushed-6": assetUrl("./audio/worker-pushed-6.wav"),
+  "worker-pushed-7": assetUrl("./audio/worker-pushed-7.wav"),
+  "worker-pushed-8": assetUrl("./audio/worker-pushed-8.wav"),
+  "worker-pushed-9": assetUrl("./audio/worker-pushed-9.wav"),
+  "worker-pushed-10": assetUrl("./audio/worker-pushed-10.wav"),
+  "worker-pushed-11": assetUrl("./audio/worker-pushed-11.wav"),
+  "worker-pushed-12": assetUrl("./audio/worker-pushed-12.wav"),
   "result-lose-1": assetUrl("./audio/results/lose 1.wav"),
   "result-lose-2": assetUrl("./audio/results/lose 2.wav"),
   "result-lose-2a": assetUrl("./audio/results/lose 2a.wav"),
@@ -170,6 +182,30 @@ export const AUDIO_ASSETS = {
   "roadblock-held-up-9": assetUrl("./audio/roadblocks/roadblock-held-up-9.wav"),
   "roadblock-held-up-10": assetUrl(
     "./audio/roadblocks/roadblock-held-up-10.wav",
+  ),
+  "roadblock-held-up-11": assetUrl(
+    "./audio/roadblocks/roadblock-held-up-11.wav",
+  ),
+  "roadblock-held-up-12": assetUrl(
+    "./audio/roadblocks/roadblock-held-up-12.wav",
+  ),
+  "roadblock-held-up-13": assetUrl(
+    "./audio/roadblocks/roadblock-held-up-13.wav",
+  ),
+  "roadblock-held-up-14": assetUrl(
+    "./audio/roadblocks/roadblock-held-up-14.wav",
+  ),
+  "roadblock-held-up-15": assetUrl(
+    "./audio/roadblocks/roadblock-held-up-15.wav",
+  ),
+  "roadblock-held-up-16": assetUrl(
+    "./audio/roadblocks/roadblock-held-up-16.wav",
+  ),
+  "roadblock-held-up-17": assetUrl(
+    "./audio/roadblocks/roadblock-held-up-17.wav",
+  ),
+  "roadblock-held-up-18": assetUrl(
+    "./audio/roadblocks/roadblock-held-up-18.wav",
   ),
   "victory-takt-legend-1": assetUrl("./audio/victory/takt-legend-1.wav"),
   "victory-takt-legend-2": assetUrl("./audio/victory/takt-legend-2.wav"),

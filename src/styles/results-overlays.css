@@ -1068,13 +1068,17 @@
 
 .leaderboard-entry-screen .name-display {
   min-height: 58px;
+  padding: 6px 12px;
   border: 1px solid rgba(164, 194, 215, 0.42);
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.54);
   color: rgba(255, 255, 255, 0.92);
-  font-size: 30px;
+  font-size: clamp(18px, 1.9vw, 30px);
   font-style: italic;
-  letter-spacing: 2px;
+  letter-spacing: 0;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-align: center;
   text-transform: uppercase;
 }
 
@@ -1703,4 +1707,123 @@
   outline: 5px solid var(--blue);
   outline-offset: 3px;
   transform: translateY(2px);
+}
+
+.idle-warning-backdrop,
+.quit-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(1, 7, 12, 0.72);
+  backdrop-filter: blur(5px);
+}
+
+.idle-warning-card,
+.quit-confirm-card {
+  width: min(520px, 92vw);
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  padding: 34px;
+  border: 3px solid #f4c95d;
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(14, 231, 246, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 231, 246, 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(5, 30, 50, 0.97), rgba(1, 7, 12, 0.98));
+  background-size: 22px 22px, 22px 22px, auto;
+  box-shadow:
+    0 20px 46px rgba(0, 0, 0, 0.46),
+    inset 0 1px rgba(255, 255, 255, 0.14);
+  color: #edf7fe;
+  text-align: center;
+}
+
+.idle-warning-card h2,
+.quit-confirm-card h2 {
+  margin: 0;
+  color: #f4c95d;
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: 0.95;
+  text-transform: uppercase;
+  text-shadow:
+    0 4px 0 #073763,
+    0 12px 18px rgba(0, 0, 0, 0.48);
+}
+
+.quit-confirm-card p {
+  margin: -6px 0 0;
+  color: #9fd7ff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.idle-countdown {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  color: #edf7fe;
+  text-transform: uppercase;
+}
+
+.idle-countdown strong {
+  color: #8cff2e;
+  font-size: clamp(54px, 8vw, 92px);
+  line-height: 0.9;
+  text-shadow: 0 0 22px rgba(140, 255, 46, 0.32);
+}
+
+.idle-countdown span {
+  color: #9fd7ff;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.idle-warning-actions,
+.quit-confirm-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.idle-warning-button,
+.quit-confirm-button {
+  min-height: 58px;
+  border: 2px solid rgba(237, 247, 254, 0.55);
+  border-radius: 6px;
+  background: rgba(237, 247, 254, 0.08);
+  color: #edf7fe;
+  font-size: 22px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.idle-warning-button.primary,
+.quit-confirm-button.primary {
+  border-color: #8cff2e;
+  color: #8cff2e;
+}
+
+.idle-warning-button.secondary {
+  border-color: rgba(244, 201, 93, 0.76);
+  color: #f4c95d;
+}
+
+.quit-confirm-button.danger {
+  border-color: rgba(255, 112, 112, 0.9);
+  color: #ffb1a8;
+}
+
+.idle-warning-button.selected,
+.idle-warning-button:focus-visible,
+.quit-confirm-button.selected,
+.quit-confirm-button:focus-visible {
+  outline: 4px solid #0ee7f6;
+  outline-offset: 3px;
+  background: rgba(14, 231, 246, 0.16);
 }

@@ -1,5 +1,9 @@
 import { NAME_KEYS } from "../gameConfig.js";
-import { formatMoney, state } from "../gameLogic.js";
+import {
+  formatMoney,
+  MAX_LEADERBOARD_NAME_LENGTH,
+  state,
+} from "../gameLogic.js";
 import { completedProjectCount } from "../ui/career.js";
 import { leaderboardBoard } from "../ui/leaderboard.js";
 
@@ -112,9 +116,14 @@ function nameEntryDisplay() {
 
 function pendingLeaderboardEntry() {
   return {
-    name: (state.scoreName || "YOU").trim().toUpperCase().slice(0, 12) || "YOU",
+    name:
+      (state.scoreName || "YOU")
+        .trim()
+        .toUpperCase()
+        .slice(0, MAX_LEADERBOARD_NAME_LENGTH) || "YOU",
     project: state.projectRound,
     projectsCompleted: completedProjectCount(),
+    players: state.hadTwoPlayers ? 2 : 1,
     earnings: state.totalProfit,
     pending: true,
   };

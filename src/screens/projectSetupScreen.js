@@ -163,7 +163,7 @@ function setupHero(project) {
 }
 
 function modeIconClass(index) {
-  return ["mode-icon-high", "mode-icon-medium", "mode-icon-low"][index] ?? "";
+  return ["mode-icon-low", "mode-icon-medium", "mode-icon-high"][index] ?? "";
 }
 
 function setupPreviewTower() {
