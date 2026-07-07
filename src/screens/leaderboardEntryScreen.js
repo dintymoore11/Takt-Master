@@ -124,6 +124,7 @@ function pendingLeaderboardEntry() {
     project: state.projectRound,
     projectsCompleted: completedProjectCount(),
     players: state.hadTwoPlayers ? 2 : 1,
+    beatGame: state.beatGame,
     earnings: state.totalProfit,
     pending: true,
   };

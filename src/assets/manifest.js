@@ -123,6 +123,16 @@ export const UI_ASSETS = {
   "intakt-logo-white": assetUrl("./ui/intakt-logo-full-white.png"),
   "leantakt-logo": assetUrl("./ui/leantakt-logo.png"),
   start: assetUrl("./ui/start.svg"),
+  "trophy-level-1": assetUrl("./ui/trophies/trophy-level-1.png"),
+  "trophy-level-2": assetUrl("./ui/trophies/trophy-level-2.png"),
+  "trophy-level-3": assetUrl("./ui/trophies/trophy-level-3.png"),
+  "trophy-level-4": assetUrl("./ui/trophies/trophy-level-4.png"),
+  "trophy-level-5": assetUrl("./ui/trophies/trophy-level-5.png"),
+  "trophy-level-6": assetUrl("./ui/trophies/trophy-level-6.png"),
+  "trophy-level-7": assetUrl("./ui/trophies/trophy-level-7.png"),
+  "trophy-level-8": assetUrl("./ui/trophies/trophy-level-8.png"),
+  "trophy-level-9": assetUrl("./ui/trophies/trophy-level-9.png"),
+  "trophy-level-10": assetUrl("./ui/trophies/trophy-level-10.png"),
 };
 
 export const AUDIO_ASSETS = {

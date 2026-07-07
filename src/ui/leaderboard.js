@@ -63,11 +63,14 @@ function projectsCompleted(row) {
 }
 
 function playerName(row) {
+  const beatGameIcon = row.beatGame
+    ? `<span class="beat-game-icon" aria-label="Beat the game" title="Beat the game"></span>`
+    : "";
   const twoPlayerIcon =
     row.players > 1
       ? `<span class="two-player-icon" aria-label="Two players" title="Two players"></span>`
       : "";
-  return `${row.name}${twoPlayerIcon}`;
+  return `${row.name}${beatGameIcon}${twoPlayerIcon}`;
 }
 
 function leaderboardRowClass(row) {

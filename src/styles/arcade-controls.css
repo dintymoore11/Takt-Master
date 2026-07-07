@@ -64,13 +64,13 @@
 
 .player-selection-ring-p1 {
   inset: 6px;
-  border: 2px dashed #1497ff;
+  border: 4px dashed #1497ff;
   filter: drop-shadow(0 0 3px rgba(20, 151, 255, 0.7));
 }
 
 .player-selection-ring-p2 {
   inset: 9px;
-  border: 2px dashed #ff304f;
+  border: 4px dashed #ff304f;
   filter: drop-shadow(0 0 3px rgba(255, 48, 79, 0.66));
 }
 
@@ -144,4 +144,16 @@
 
 .two-player-icon::after {
   right: 0;
+}
+
+.beat-game-icon {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  clip-path: polygon(50% 0, 62% 34%, 98% 35%, 69% 56%, 79% 91%, 50% 70%, 21% 91%, 31% 56%, 2% 35%, 38% 34%);
+  background: linear-gradient(135deg, #fff7b8, #ffc400 48%, #9f5d00);
+  box-shadow:
+    0 0 9px rgba(255, 196, 0, 0.78),
+    0 2px 0 rgba(64, 37, 0, 0.75);
 }

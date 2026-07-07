@@ -16,6 +16,7 @@ import { createInitialState, createTradeState } from "./gameState.js";
 
 const LEADERBOARD_LIMIT = 20;
 export const MAX_LEADERBOARD_NAME_LENGTH = 30;
+export const FINAL_CAMPAIGN_LEVEL = 10;
 const PUSH_COST_MARKUP = 1.12;
 const LEVEL_TIGHTENING_TARGET = 10;
 
@@ -123,6 +124,7 @@ export function startCampaign(mode) {
   state.careerStartRound = 1;
   state.totalProfit = 0;
   state.gameOver = false;
+  state.beatGame = false;
   state.hadTwoPlayers = activePlayers().length > 1;
   resetProject(mode);
 }
@@ -158,13 +160,20 @@ export function resetProject(mode) {
 }
 
 export function startNextProject() {
-  if (isFinalProjectInLevel() && state.phase !== "win") {
-    state.phase = "win";
+  if (
+    isFinalProjectInLevel() &&
+    state.phase !== "win" &&
+    state.phase !== "gameComplete"
+  ) {
+    state.beatGame = campaignLevel() >= FINAL_CAMPAIGN_LEVEL;
+    state.phase = state.beatGame ? "gameComplete" : "win";
     state.quitConfirm = false;
     state.endActionIndex = 0;
     notifyRender();
     return;
   }
+
+  if (state.phase === "gameComplete") return;
 
   state.projectRound += 1;
   state.quitConfirm = false;
@@ -777,6 +786,7 @@ export function returnToTitle() {
   state.careerStartRound = 1;
   state.totalProfit = 0;
   state.gameOver = false;
+  state.beatGame = false;
   state.players = [
     { id: 1, active: true, selectedTradeIndex: 0, selectedZone: 1 },
     { id: 2, active: false, selectedTradeIndex: 0, selectedZone: 1 },
@@ -1062,6 +1072,7 @@ export function formatMoney(amount) {
 }
 
 export function leaderboardQualifies(score) {
+  if (state.beatGame) return true;
   const rows = loadLeaderboard();
   if (rows.length < LEADERBOARD_LIMIT) return true;
   return score > Math.min(...rows.map((row) => row.earnings));
@@ -1101,6 +1112,7 @@ export function saveLeaderboardScore() {
       project: state.projectRound,
       projectsCompleted: completedProjectTotal(),
       players: state.hadTwoPlayers ? 2 : 1,
+      beatGame: state.beatGame,
       earnings: state.totalProfit,
     },
   ]

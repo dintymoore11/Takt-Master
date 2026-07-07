@@ -33,6 +33,7 @@ import {
   campaignLevel,
   currentProject,
   dailyDelayCost,
+  FINAL_CAMPAIGN_LEVEL,
   formatMoney,
   gameplayDuration,
   getTrade,
@@ -99,11 +100,35 @@ const WORKER_WORK_COOLDOWN_MS = 420;
 const PROJECT_RESULT_VOLUME = 0.82;
 const CAREER_VICTORY_VOLUME = 0.88;
 const ROADBLOCK_SOUND_VOLUME = 0.76;
+const MENU_SELECT_CODES = new Set([
+  "Space",
+  "KeyF",
+  "KeyG",
+  "KeyH",
+  "KeyJ",
+  "KeyK",
+  "KeyL",
+]);
 const ARCADE_PLAYERS = [
   {
     index: 0,
     start: ["Digit1"],
     exit: ["Escape"],
+    directions: {
+      ArrowUp: "ArrowUp",
+      ArrowDown: "ArrowDown",
+      ArrowLeft: "ArrowLeft",
+      ArrowRight: "ArrowRight",
+    },
+    modes: ["KeyI", "KeyO", "KeyP"],
+    resolve: ["KeyJ", "Space"],
+    identify: ["KeyK"],
+    push: ["KeyL"],
+  },
+  {
+    index: 1,
+    start: ["Digit2"],
+    exit: ["Backspace"],
     directions: {
       KeyW: "ArrowUp",
       KeyS: "ArrowDown",
@@ -114,21 +139,6 @@ const ARCADE_PLAYERS = [
     resolve: ["KeyF"],
     identify: ["KeyG"],
     push: ["KeyH"],
-  },
-  {
-    index: 1,
-    start: ["Digit2"],
-    exit: ["Backspace"],
-    directions: {
-      ArrowUp: "ArrowUp",
-      ArrowDown: "ArrowDown",
-      ArrowLeft: "ArrowLeft",
-      ArrowRight: "ArrowRight",
-    },
-    modes: ["KeyI", "KeyO", "KeyP"],
-    resolve: ["KeyJ"],
-    identify: ["KeyK"],
-    push: ["KeyL"],
   },
 ];
 const WORKER_FRUSTRATION_SOUNDS = [
@@ -649,7 +659,7 @@ function render({ keepIdleTimer = false } = {}) {
     return;
   }
 
-  if (state.phase === "win") {
+  if (state.phase === "win" || state.phase === "gameComplete") {
     app.innerHTML = withIdleWarning(winView());
     bindWin();
     bindIdleWarning();
@@ -1393,7 +1403,10 @@ function zonesForPlanLevel(level) {
 }
 
 function projectSelectorLevel() {
-  return Math.min(Math.max(state.projectSelectorLevel ?? 1, 1), 10);
+  return Math.min(
+    Math.max(state.projectSelectorLevel ?? 1, 1),
+    FINAL_CAMPAIGN_LEVEL,
+  );
 }
 
 function selectedProjectRound(projectIndex = state.projectSelectorIndex) {
@@ -1403,7 +1416,10 @@ function selectedProjectRound(projectIndex = state.projectSelectorIndex) {
 function openProjectSelector() {
   state.projectSelectorOpen = true;
   state.projectSelectorArea = "projects";
-  state.projectSelectorLevel = Math.min(Math.max(campaignLevel(), 1), 10);
+  state.projectSelectorLevel = Math.min(
+    Math.max(campaignLevel(), 1),
+    FINAL_CAMPAIGN_LEVEL,
+  );
   state.projectSelectorIndex = projectTemplateIndex();
   render();
 }
@@ -1416,7 +1432,10 @@ function closeProjectSelector() {
 }
 
 function selectProjectSelectorLevel(level) {
-  state.projectSelectorLevel = Math.min(Math.max(level, 1), 10);
+  state.projectSelectorLevel = Math.min(
+    Math.max(level, 1),
+    FINAL_CAMPAIGN_LEVEL,
+  );
   state.projectSelectorArea = "levels";
   render();
 }
@@ -1427,6 +1446,7 @@ function bindTitle() {
     state.careerStartRound = 1;
     state.totalProfit = 0;
     state.gameOver = false;
+    state.beatGame = false;
     state.projectSelectorOpen = false;
     state.phase = "setup";
     render();
@@ -1461,6 +1481,7 @@ function selectTestProject(index) {
   state.projectSelectorArea = "projects";
   state.totalProfit = 0;
   state.gameOver = false;
+  state.beatGame = false;
   state.phase = "setup";
   render();
 }
@@ -1612,7 +1633,14 @@ function bindQuitConfirmation() {
 function bindWin() {
   document
     .querySelector("[data-continue]")
-    ?.addEventListener("click", startNextProject);
+    ?.addEventListener("click", () => {
+      if (state.phase === "gameComplete") {
+        finishCareer();
+        return;
+      }
+
+      startNextProject();
+    });
 }
 
 function bindGame() {
@@ -1784,6 +1812,16 @@ function handleArcadeControl(event) {
     return true;
   }
 
+  if (state.phase === "setup" && direction) {
+    event.preventDefault();
+    if (direction === "ArrowLeft" || direction === "ArrowUp") {
+      selectSetupMode(setupModeIndex() - 1);
+    } else {
+      selectSetupMode(setupModeIndex() + 1);
+    }
+    return true;
+  }
+
   if (state.phase !== "running") return false;
 
   if (!state.players?.[playerIndex]?.active) {
@@ -1822,6 +1860,10 @@ function handleArcadeControl(event) {
 
 function isExitControlCode(code) {
   return ARCADE_PLAYERS.some((player) => player.exit.includes(code));
+}
+
+function isMenuSelectEvent(event) {
+  return event.key === "Enter" || MENU_SELECT_CODES.has(event.code);
 }
 
 function startProjectSelectorHold(event) {
@@ -1866,7 +1908,10 @@ function moveProjectSelector(direction) {
     if (direction === "ArrowLeft") {
       state.projectSelectorLevel = Math.max(1, projectSelectorLevel() - 1);
     } else if (direction === "ArrowRight") {
-      state.projectSelectorLevel = Math.min(10, projectSelectorLevel() + 1);
+      state.projectSelectorLevel = Math.min(
+        FINAL_CAMPAIGN_LEVEL,
+        projectSelectorLevel() + 1,
+      );
     } else if (direction === "ArrowDown") {
       state.projectSelectorArea = "projects";
     } else if (direction === "ArrowUp") {
@@ -1949,7 +1994,7 @@ window.addEventListener("keydown", (event) => {
       return;
     }
 
-    if (event.code === "Space" || event.key === "Enter") {
+    if (isMenuSelectEvent(event)) {
       event.preventDefault();
       if (state.idleWarningActionIndex === 0) {
         closeIdleWarning();
@@ -1994,7 +2039,7 @@ window.addEventListener("keydown", (event) => {
       return;
     }
 
-    if (event.code === "Space" || event.key === "Enter") {
+    if (isMenuSelectEvent(event)) {
       event.preventDefault();
       if (state.endActionIndex === 0) {
         closeQuitConfirmation();
@@ -2028,7 +2073,7 @@ window.addEventListener("keydown", (event) => {
     if (state.projectSelectorOpen) {
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
         moveProjectSelector(event.key);
-      } else if (event.code === "Space" || event.key === "Enter") {
+      } else if (isMenuSelectEvent(event)) {
         event.preventDefault();
         activateProjectSelectorControl();
         return;
@@ -2044,7 +2089,7 @@ window.addEventListener("keydown", (event) => {
     if (
       event.key.toLowerCase() === "s" ||
       event.key === "Enter" ||
-      event.code === "Space"
+      MENU_SELECT_CODES.has(event.code)
     ) {
       event.preventDefault();
       state.phase = "setup";
@@ -2076,8 +2121,7 @@ window.addEventListener("keydown", (event) => {
     }
 
     if (
-      event.code === "Space" ||
-      event.key === "Enter" ||
+      isMenuSelectEvent(event) ||
       event.key.toLowerCase() === "s"
     ) {
       event.preventDefault();
@@ -2095,7 +2139,7 @@ window.addEventListener("keydown", (event) => {
       moveNameEntryCursor("up");
     } else if (event.key === "ArrowDown") {
       moveNameEntryCursor("down");
-    } else if (event.code === "Space" || event.key === "Enter") {
+    } else if (isMenuSelectEvent(event)) {
       event.preventDefault();
       activateNameEntryControl();
       return;
@@ -2122,7 +2166,7 @@ window.addEventListener("keydown", (event) => {
   if (state.phase === "scoreResult") {
     if (
       ["s", "enter", "end"].includes(event.key.toLowerCase()) ||
-      event.code === "Space"
+      MENU_SELECT_CODES.has(event.code)
     ) {
       event.preventDefault();
       returnToTitle();
@@ -2130,13 +2174,17 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (state.phase === "win") {
+  if (state.phase === "win" || state.phase === "gameComplete") {
     if (
       ["s", "enter"].includes(event.key.toLowerCase()) ||
-      event.code === "Space"
+      MENU_SELECT_CODES.has(event.code)
     ) {
       event.preventDefault();
-      startNextProject();
+      if (state.phase === "gameComplete") {
+        finishCareer();
+      } else {
+        startNextProject();
+      }
     }
     return;
   }
@@ -2145,8 +2193,7 @@ window.addEventListener("keydown", (event) => {
     if (state.gameOver) {
       if (
         event.key.toLowerCase() === "s" ||
-        event.code === "Space" ||
-        event.key === "Enter"
+        isMenuSelectEvent(event)
       ) {
         event.preventDefault();
         finishCareer();
@@ -2160,7 +2207,7 @@ window.addEventListener("keydown", (event) => {
       return;
     }
 
-    if (event.code === "Space" || event.key === "Enter") {
+    if (isMenuSelectEvent(event)) {
       event.preventDefault();
       if (state.endActionIndex === 0) {
         restartEndProject();

@@ -11,6 +11,7 @@ export function createInitialState() {
     setupModeIndex: 0,
     totalProfit: 0,
     gameOver: false,
+    beatGame: false,
     day: 0,
     profit: BASE_PROJECT_BUDGET,
     laborCost: 0,
