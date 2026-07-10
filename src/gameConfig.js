@@ -4,8 +4,8 @@ export const PROJECTS = [
     type: "office",
     levels: 3,
     zonesPerLevel: 6,
-    budget: 4500000,
-    duration: 135,
+    budget: 3500000,
+    duration: 100,
     roadblockChanceBonus: 0.05,
     summary: "Office building",
     trades: [

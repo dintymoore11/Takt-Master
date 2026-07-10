@@ -1,4 +1,5 @@
 import { formatMoney, loadLeaderboard } from "../gameLogic.js";
+import { uiAsset } from "../assets/manifest.js";
 
 export function leaderboardBoard({
   className = "",
@@ -68,7 +69,7 @@ function playerName(row) {
     : "";
   const twoPlayerIcon =
     row.players > 1
-      ? `<span class="two-player-icon" aria-label="Two players" title="Two players"></span>`
+      ? `<img class="two-player-icon" src="${uiAsset("two-player-badge")}" alt="Two players" title="Two players">`
       : "";
   return `${row.name}${beatGameIcon}${twoPlayerIcon}`;
 }

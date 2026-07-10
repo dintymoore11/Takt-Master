@@ -118,32 +118,14 @@
 }
 
 .two-player-icon {
-  position: relative;
   flex: 0 0 auto;
-  width: 23px;
-  height: 17px;
+  width: 24px;
+  height: 24px;
   display: inline-block;
-}
-
-.two-player-icon::before,
-.two-player-icon::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  width: 12px;
-  height: 12px;
-  border: 2px solid #ffffff;
-  border-radius: 50% 50% 45% 45%;
-  background: linear-gradient(#1497ff 0 44%, #ff304f 45% 100%);
-  box-shadow: 0 0 9px rgba(255, 255, 255, 0.42);
-}
-
-.two-player-icon::before {
-  left: 0;
-}
-
-.two-player-icon::after {
-  right: 0;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 0 5px rgba(255, 196, 0, 0.55))
+    drop-shadow(0 1px 0 rgba(0, 0, 0, 0.72));
 }
 
 .beat-game-icon {

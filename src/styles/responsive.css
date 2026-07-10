@@ -708,6 +708,10 @@
     font-size: clamp(38px, 3.9vw, 58px);
   }
 
+  .legend-results > div:first-child strong {
+    font-size: clamp(26px, 7vw, 42px);
+  }
+
   .legend-continue-button {
     min-width: min(430px, 58vw);
     min-height: 60px;

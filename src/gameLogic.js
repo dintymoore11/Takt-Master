@@ -23,6 +23,8 @@ const LEVEL_TIGHTENING_TARGET = 10;
 let renderCallback = () => {};
 let workerBlockedCallback = () => {};
 let workerPushedCallback = () => {};
+let workerPushBlockedCallback = () => {};
+let workerPushRoadblockedCallback = () => {};
 let workerWorkCallback = () => {};
 let roadblockAppearedCallback = () => {};
 let roadblockResolvedCallback = () => {};
@@ -39,6 +41,14 @@ export function setWorkerBlockedCallback(callback) {
 
 export function setWorkerPushedCallback(callback) {
   workerPushedCallback = callback;
+}
+
+export function setWorkerPushBlockedCallback(callback) {
+  workerPushBlockedCallback = callback;
+}
+
+export function setWorkerPushRoadblockedCallback(callback) {
+  workerPushRoadblockedCallback = callback;
 }
 
 export function setWorkerWorkCallback(callback) {
@@ -151,6 +161,9 @@ export function resetProject(mode) {
   state.roadblocks = [];
   state.identifiedTradeIds = new Set();
   state.lastTradeByZone = {};
+  state.workerHoldUpCount = 0;
+  state.workerRoadblockHoldUpCount = 0;
+  state.workerKindPushCount = 0;
   state.scoreName = "";
   state.scoreSaved = false;
   state.quitConfirm = false;
@@ -210,6 +223,12 @@ export function rollForTrades() {
 
     const activeRoadblock = tradeBlockedByRoadblock(trade);
     if (activeRoadblock) {
+      const blockingTrade = roadblockedOccupantAhead(trade);
+      if (blockingTrade) {
+        delayTradeForOccupant(trade, blockingTrade);
+        return;
+      }
+
       delayTradeForRoadblock(trade, activeRoadblock);
       return;
     }
@@ -292,6 +311,13 @@ export function advanceTradesOneStep() {
     const activeRoadblock = tradeBlockedByRoadblock(trade);
 
     if (activeRoadblock) {
+      const blockingTrade = roadblockedOccupantAhead(trade);
+      if (blockingTrade) {
+        delayTradeForOccupant(trade, blockingTrade);
+        trade.pendingSteps = 0;
+        return;
+      }
+
       delayTradeForRoadblock(trade, activeRoadblock, { stopMovement: true });
       return;
     }
@@ -319,27 +345,47 @@ function delayTradeForRoadblock(
   trade.waitReason = "roadblock";
   if (stopMovement) trade.pendingSteps = 0;
 
-  if (roadblock.lastDelayNotifiedDay === state.day) return;
+  if (roadblock.lastDelayPenalizedDay !== state.day) {
+    roadblock.lastDelayPenalizedDay = state.day;
+    trade.roadblockWaitCount = (trade.roadblockWaitCount ?? 0) + 1;
+    state.workerRoadblockHoldUpCount =
+      (state.workerRoadblockHoldUpCount ?? 0) + 1;
+    markTradeFrustrated(trade, "roadblock");
+    reduceMorale(trade, 6);
+  }
 
-  roadblock.lastDelayNotifiedDay = state.day;
-  markTradeFrustrated(trade, "roadblock");
-  reduceMorale(trade, 6);
+  roadblock.delayNotifiedTradeIds = roadblock.delayNotifiedTradeIds ?? new Set();
+  if (roadblock.delayNotifiedTradeIds.has(trade.id)) return;
+
+  roadblock.delayNotifiedTradeIds.add(trade.id);
+  roadblock.delayNotified = true;
   workerRoadblockedCallback(trade, roadblock);
   addLog(`${trade.name} lost a day to ${roadblock.label}.`);
 }
 
-export function moveTradeOneZone(trade, { ignoreSpacing = false } = {}) {
+function delayTradeForOccupant(trade, occupant) {
+  trade.delayedToday = true;
+  trade.waitReason = "blocked";
+  trade.pendingSteps = 0;
+  state.workerHoldUpCount = (state.workerHoldUpCount ?? 0) + 1;
+  markTradeFrustrated(trade, "blocked");
+  workerBlockedCallback(trade, occupant);
+  addLog(
+    `${trade.name} waited for ${occupant.name} to clear zone ${occupant.zone}.`,
+  );
+}
+
+export function moveTradeOneZone(
+  trade,
+  { ignoreSpacing = false, notifyBlocked = true } = {},
+) {
   const targetZone = trade.zone + 1;
   if (targetZone <= zoneCount()) {
     const occupant = zoneOccupant(targetZone, trade.id);
     if (occupant) {
-      trade.delayedToday = true;
-      trade.waitReason = "blocked";
-      markTradeFrustrated(trade, "blocked");
-      workerBlockedCallback(trade, occupant);
-      addLog(
-        `${trade.name} waited for ${occupant.name} to clear zone ${targetZone}.`,
-      );
+      if (notifyBlocked) {
+        delayTradeForOccupant(trade, occupant);
+      }
       return false;
     }
   }
@@ -389,6 +435,14 @@ export function tradeBlockedByRoadblock(trade) {
       roadblock.tradeId === trade.id &&
       roadblock.zone <= trade.zone,
   );
+}
+
+function roadblockedOccupantAhead(trade) {
+  const occupant = zoneOccupant(trade.zone + 1, trade.id);
+  if (!occupant) return null;
+  return tradeBlockedByRoadblock(occupant) || occupant.waitReason === "roadblock"
+    ? occupant
+    : null;
 }
 
 export function zoneOccupant(zone, tradeId) {
@@ -455,7 +509,9 @@ function spawnRoadblock() {
     revealed: true,
     identified: false,
     delayDays: 0,
-    lastDelayNotifiedDay: null,
+    delayNotified: false,
+    delayNotifiedTradeIds: new Set(),
+    lastDelayPenalizedDay: null,
   };
   state.roadblocks.push(roadblock);
   roadblockAppearedCallback(roadblock, trade);
@@ -653,16 +709,23 @@ export function pushSelectedTrade(
       roadblock.zone <= trade.zone,
   );
   if (activeRoadblock) {
+    workerPushRoadblockedCallback(trade, activeRoadblock);
     addLog(`${trade.name} cannot push through ${activeRoadblock.label}.`);
     notifyRender();
     return;
   }
 
   const pendingStepsBeforePush = trade.pendingSteps;
+  const pushBlockingTrade =
+    trade.zone + 1 <= zoneCount() ? zoneOccupant(trade.zone + 1, trade.id) : null;
   trade.pendingSteps += 1;
 
-  if (!moveTradeOneZone(trade, { ignoreSpacing: true })) {
+  if (!moveTradeOneZone(trade, { ignoreSpacing: true, notifyBlocked: false })) {
     trade.pendingSteps = pendingStepsBeforePush;
+    if (pushBlockingTrade) {
+      workerPushBlockedCallback(trade, pushBlockingTrade);
+      addLog(`${trade.name} cannot push past ${pushBlockingTrade.name}.`);
+    }
     notifyRender();
     return;
   }
@@ -674,6 +737,7 @@ export function pushSelectedTrade(
   reduceMorale(trade, 9);
   state.pushCost += cost;
   state.profit -= cost;
+  state.workerKindPushCount = (state.workerKindPushCount ?? 0) + 1;
   workerPushedCallback(trade);
   addLog(`${trade.name} pushed forward for ${formatMoney(cost)}.`);
   notifyRender();
@@ -717,9 +781,10 @@ export function identifyRoadblocksForTrade(targetTrade = tradeForSelectedZonePus
       .filter((roadblock) => !roadblock.resolved)
       .map((roadblock) => roadblock.zone),
   );
+  const minimumReactionZone = Math.max(1, trade.zone) + 4;
   const candidateZones = Array.from(
-    { length: Math.max(0, zoneCount() - Math.max(1, trade.zone)) },
-    (_, index) => Math.max(1, trade.zone) + index + 1,
+    { length: Math.max(0, zoneCount() - minimumReactionZone + 1) },
+    (_, index) => minimumReactionZone + index,
   ).filter((zone) => !existingZones.has(zone));
 
   for (let index = 0; index < neededCount && candidateZones.length > 0; index += 1) {
@@ -741,7 +806,9 @@ export function identifyRoadblocksForTrade(targetTrade = tradeForSelectedZonePus
       identified: true,
       revealAnimationPending: true,
       delayDays: 0,
-      lastDelayNotifiedDay: null,
+      delayNotified: false,
+      delayNotifiedTradeIds: new Set(),
+      lastDelayPenalizedDay: null,
     };
     state.roadblocks.push(roadblock);
     roadblockAppearedCallback(roadblock, trade);

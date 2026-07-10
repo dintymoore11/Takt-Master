@@ -15,10 +15,10 @@ import {
   zoneVisualLayers,
 } from "./projectVisuals.js";
 import {
-  audioAsset,
   buildingAssetForProject,
   uiAsset,
 } from "./assets/manifest.js";
+import { registerAudioCallbacks, syncGameAudio } from "./audio.js";
 import { setupModeIndex, setupView } from "./screens/projectSetupScreen.js";
 import {
   nameEntryKeys,
@@ -60,14 +60,7 @@ import {
   saveLeaderboardScore,
   selectNameKey,
   setPlayerSelectedZone,
-  setRoadblockAppearedCallback,
-  setRoadblockResolvedCallback,
   setRenderCallback,
-  setRollDurationMs,
-  setWorkerBlockedCallback,
-  setWorkerPushedCallback,
-  setWorkerRoadblockedCallback,
-  setWorkerWorkCallback,
   startCampaign,
   startNextProject,
   state,
@@ -91,15 +84,6 @@ import {
 const IDLE_RETURN_MS = 90_000;
 const IDLE_WARNING_SECONDS = 30;
 const PROJECT_SELECTOR_HOLD_MS = 3_000;
-const CONSTRUCTION_AMBIENCE_VOLUME = 0.24;
-const DICE_ROLL_VOLUME = 0.72;
-const WORKER_FRUSTRATION_VOLUME = 0.68;
-const WORKER_PUSHED_VOLUME = 0.7;
-const WORKER_WORK_VOLUME = 0.34;
-const WORKER_WORK_COOLDOWN_MS = 420;
-const PROJECT_RESULT_VOLUME = 0.82;
-const CAREER_VICTORY_VOLUME = 0.88;
-const ROADBLOCK_SOUND_VOLUME = 0.76;
 const MENU_SELECT_CODES = new Set([
   "Space",
   "KeyF",
@@ -141,180 +125,12 @@ const ARCADE_PLAYERS = [
     push: ["KeyH"],
   },
 ];
-const WORKER_FRUSTRATION_SOUNDS = [
-  "frustrated-blocked-1",
-  "frustrated-blocked-2",
-  "frustrated-blocked-3",
-  "frustrated-blocked-4",
-  "held-up-1",
-  "held-up-2",
-  "held-up-3",
-  "held-up-4",
-  "held-up-5",
-  "held-up-7",
-  "held-up-8",
-  "slowed-1",
-  "slowed-2",
-  "slowed-3",
-];
-const WORKER_PUSHED_SOUNDS = [
-  "worker-pushed-1",
-  "worker-pushed-2",
-  "worker-pushed-3",
-  "worker-pushed-4",
-  "worker-pushed-5",
-  "worker-pushed-6",
-  "worker-pushed-7",
-  "worker-pushed-8",
-  "worker-pushed-9",
-  "worker-pushed-10",
-  "worker-pushed-11",
-  "worker-pushed-12",
-];
-const WORKER_ROADBLOCKED_SOUNDS = [
-  "roadblock-held-up-1",
-  "roadblock-held-up-2",
-  "roadblock-held-up-3",
-  "roadblock-held-up-4",
-  "roadblock-held-up-5",
-  "roadblock-held-up-6",
-  "roadblock-held-up-7",
-  "roadblock-held-up-8",
-  "roadblock-held-up-9",
-  "roadblock-held-up-10",
-  "roadblock-held-up-11",
-  "roadblock-held-up-12",
-  "roadblock-held-up-13",
-  "roadblock-held-up-14",
-  "roadblock-held-up-15",
-  "roadblock-held-up-16",
-  "roadblock-held-up-17",
-  "roadblock-held-up-18",
-];
-const PROJECT_WIN_SOUNDS = [
-  ["result-win-1", "result-win-1a"],
-  ["result-win-2"],
-  ["result-win-3"],
-  ["result-win-4"],
-  ["result-win-5", "result-win-5a"],
-  ["result-win-6"],
-  ["result-win-7"],
-];
-const PROJECT_LOSE_SOUNDS = [
-  ["result-lose-1"],
-  ["result-lose-2", "result-lose-2a"],
-  ["result-lose-3"],
-  ["result-lose-4"],
-];
-const CAREER_VICTORY_SOUNDS = [
-  "victory-takt-legend-1",
-  "victory-takt-legend-2",
-  "victory-takt-legend-3",
-  "victory-takt-legend-4",
-  "victory-takt-legend-5",
-];
-const WORKER_WORK_SOUNDS = {
-  cutting: [
-    "work-cutting-1",
-    "work-cutting-2",
-    "work-cutting-3",
-    "work-cutting-4",
-  ],
-  drill: ["work-drill-1", "work-drill-2", "work-drill-3", "work-drill-4"],
-  drywall: [
-    "work-drywall-1",
-    "work-drywall-2",
-    "work-drywall-3",
-    "work-drywall-4",
-  ],
-  excavator: [
-    "work-excavator-1",
-    "work-excavator-2",
-    "work-excavator-3",
-    "work-excavator-4",
-  ],
-  foundation: ["work-foundation-1", "work-foundation-2", "work-foundation-3"],
-  hammer: ["work-hammer-1", "work-hammer-2"],
-  pounding: ["work-pounding-1", "work-pounding-2", "work-pounding-3"],
-  putty: ["work-putty-knife-1", "work-putty-knife-2", "work-putty-knife-3"],
-  sanding: ["work-sanding-1", "work-sanding-2"],
-  saw: ["work-saw-1", "work-saw-2", "work-saw-3"],
-  wrench: ["work-wrench-1", "work-wrench-2", "work-wrench-3", "work-wrench-4"],
-};
-const TRADE_WORK_SOUND_FAMILY = {
-  "access-roads": "excavator",
-  amenities: "saw",
-  "below-grade-utilities": "excavator",
-  "blade-install": "wrench",
-  "boilermakers-millwrights": "wrench",
-  "collection-cabling": "drill",
-  containment: "cutting",
-  "deep-foundations": "foundation",
-  drywall: "drywall",
-  earthwork: "excavator",
-  electrical: "drill",
-  "electrical-instrumentation": "drill",
-  elevators: "wrench",
-  equipment: "wrench",
-  "exterior-finishes": "cutting",
-  "ff-e": "putty",
-  "final-inspection": "drill",
-  "final-punchlist": "drill",
-  finishes: "putty",
-  fire: "drill",
-  "formwork-rebar": "pounding",
-  foundation: "foundation",
-  foundations: "foundation",
-  framing: "hammer",
-  "grid-tie": "drill",
-  "guestroom-mep": "wrench",
-  hvac: "wrench",
-  "industrial-commissioning": "drill",
-  "industrial-foundations": "foundation",
-  inverters: "drill",
-  "insulation-cladding": "cutting",
-  "interior-finishes": "putty",
-  landscaping: "cutting",
-  "mep-rough": "wrench",
-  "nacelle-install": "wrench",
-  painting: "sanding",
-  "pile-driving": "pounding",
-  "pipe-fitters": "wrench",
-  plumbing: "wrench",
-  "process-piping": "wrench",
-  "raised-floor": "hammer",
-  roofing: "saw",
-  "site-inspection": "drill",
-  skin: "cutting",
-  "skin-inspection": "drill",
-  "slab-foundation": "foundation",
-  "solar-commissioning": "drill",
-  "solar-panels": "drill",
-  "solar-racking": "wrench",
-  "structural-steel": "pounding",
-  structure: "pounding",
-  "survey-layout": "drill",
-  tile: "putty",
-  "tower-erection": "hammer",
-  underground: "excavator",
-  utilities: "wrench",
-  "utility-tie": "wrench",
-  waterproofing: "putty",
-  "wind-commissioning": "drill",
-};
 const app = document.querySelector("#app");
 let idleReturnTimer = null;
 let idleWarningTickTimer = null;
 let projectSelectorHoldTimer = null;
 let projectSelectorHoldCode = null;
 let projectSelectorSuppressExitCode = null;
-let constructionAmbience = null;
-let constructionAmbiencePlaying = false;
-let diceRollAudio = null;
-let diceRollPlaybackKey = null;
-let lastWorkerWorkSoundAt = 0;
-let projectResultPlaybackKey = null;
-let careerVictoryPlaybackKey = null;
 
 const GAME_TITLE = "Takt Builder";
 
@@ -405,219 +221,9 @@ function stopIdleWarningCountdown() {
   idleWarningTickTimer = null;
 }
 
-function constructionAmbienceAudio() {
-  if (constructionAmbience) return constructionAmbience;
-
-  constructionAmbience = new Audio(audioAsset("construction-loop"));
-  constructionAmbience.loop = true;
-  constructionAmbience.preload = "auto";
-  constructionAmbience.volume = CONSTRUCTION_AMBIENCE_VOLUME;
-
-  return constructionAmbience;
-}
-
-function syncConstructionAmbience() {
-  const shouldPlay = state.phase === "running";
-  if (!shouldPlay) {
-    stopConstructionAmbience();
-    return;
-  }
-
-  const audio = constructionAmbienceAudio();
-  if (constructionAmbiencePlaying && !audio.paused) return;
-
-  const playRequest = audio.play();
-  constructionAmbiencePlaying = true;
-
-  if (playRequest?.catch) {
-    playRequest.catch(() => {
-      constructionAmbiencePlaying = false;
-    });
-  }
-}
-
-function stopConstructionAmbience() {
-  if (!constructionAmbience) return;
-
-  constructionAmbience.pause();
-  constructionAmbience.currentTime = 0;
-  constructionAmbiencePlaying = false;
-}
-
-function syncDiceRollDuration(audio) {
-  if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
-
-  const durationMs = Math.round(audio.duration * 1000);
-  setRollDurationMs(durationMs);
-  document.documentElement.style.setProperty("--dice-roll-duration", `${durationMs}ms`);
-}
-
-function diceRollSound() {
-  if (diceRollAudio) return diceRollAudio;
-
-  diceRollAudio = new Audio(audioAsset("dice-roll"));
-  diceRollAudio.preload = "auto";
-  diceRollAudio.volume = DICE_ROLL_VOLUME;
-  diceRollAudio.addEventListener("loadedmetadata", () => syncDiceRollDuration(diceRollAudio));
-
-  return diceRollAudio;
-}
-
-function syncDiceRollSound() {
-  if (state.phase !== "running") {
-    stopDiceRollSound();
-    return;
-  }
-
-  if (state.roundPhase !== "rolling") return;
-
-  const playbackKey = `${state.projectRound}:${state.day}`;
-  if (diceRollPlaybackKey === playbackKey) return;
-
-  const audio = diceRollSound();
-  syncDiceRollDuration(audio);
-  audio.currentTime = 0;
-  diceRollPlaybackKey = playbackKey;
-
-  const playRequest = audio.play();
-  if (playRequest?.catch) {
-    playRequest.catch(() => {
-      diceRollPlaybackKey = null;
-    });
-  }
-}
-
-function stopDiceRollSound() {
-  diceRollPlaybackKey = null;
-  if (!diceRollAudio) return;
-
-  diceRollAudio.pause();
-  diceRollAudio.currentTime = 0;
-}
-
-function playRandomAudio(keys, volume) {
-  if (!keys?.length) return;
-  const key = keys[Math.floor(Math.random() * keys.length)];
-  const audio = new Audio(audioAsset(key));
-  audio.volume = volume;
-
-  const playRequest = audio.play();
-  if (playRequest?.catch) playRequest.catch(() => {});
-}
-
-function playWorkerBlockedSound() {
-  playRandomAudio(WORKER_FRUSTRATION_SOUNDS, WORKER_FRUSTRATION_VOLUME);
-}
-
-function playWorkerRoadblockedSound() {
-  playRandomAudio(WORKER_ROADBLOCKED_SOUNDS, WORKER_FRUSTRATION_VOLUME);
-}
-
-function playWorkerPushedSound() {
-  playRandomAudio(WORKER_PUSHED_SOUNDS, WORKER_PUSHED_VOLUME);
-}
-
-function playRoadblockAppearedSound() {
-  playRandomAudio(["roadblock-appears"], ROADBLOCK_SOUND_VOLUME);
-}
-
-function playRoadblockResolvedSound() {
-  playRandomAudio(["roadblock-resolves"], ROADBLOCK_SOUND_VOLUME);
-}
-
-function syncProjectResultSound() {
-  if (state.phase !== "ended" && state.phase !== "gameOver") {
-    projectResultPlaybackKey = null;
-    return;
-  }
-
-  const playbackKey = `${state.projectRound}:${state.phase}:${state.day}:${state.profit}`;
-  if (projectResultPlaybackKey === playbackKey) return;
-  projectResultPlaybackKey = playbackKey;
-
-  playRandomAudio(projectResultSoundKeys(), PROJECT_RESULT_VOLUME);
-}
-
-function syncCareerVictorySound() {
-  if (state.phase !== "win") {
-    careerVictoryPlaybackKey = null;
-    return;
-  }
-
-  const playbackKey = `${state.projectRound}:${state.totalProfit}`;
-  if (careerVictoryPlaybackKey === playbackKey) return;
-  careerVictoryPlaybackKey = playbackKey;
-
-  playRandomAudio(CAREER_VICTORY_SOUNDS, CAREER_VICTORY_VOLUME);
-}
-
-function projectResultSoundKeys() {
-  const margin = (state.profit / projectBudget()) * 100;
-  if (margin < 0) {
-    return PROJECT_LOSE_SOUNDS[
-      bucketIndex(Math.abs(margin), [5, 15, 30], PROJECT_LOSE_SOUNDS.length)
-    ];
-  }
-
-  return PROJECT_WIN_SOUNDS[
-    bucketIndex(margin, [10, 20, 30, 40, 55, 70], PROJECT_WIN_SOUNDS.length)
-  ];
-}
-
-function bucketIndex(value, thresholds, bucketCount) {
-  const index = thresholds.findIndex((threshold) => value < threshold);
-  return index === -1 ? bucketCount - 1 : index;
-}
-
-function playWorkerWorkSound(trade) {
-  if (state.phase !== "running" || state.roundPhase === "rolling") return;
-
-  const now = Date.now();
-  if (now - lastWorkerWorkSoundAt < WORKER_WORK_COOLDOWN_MS) return;
-  lastWorkerWorkSoundAt = now;
-
-  const familyKey =
-    TRADE_WORK_SOUND_FAMILY[trade?.key] ??
-    TRADE_WORK_SOUND_FAMILY[trade?.visualKey] ??
-    soundFamilyFromTradeName(trade?.name);
-  const soundKeys = WORKER_WORK_SOUNDS[familyKey] ?? WORKER_WORK_SOUNDS.hammer;
-  playRandomAudio(soundKeys, WORKER_WORK_VOLUME);
-}
-
-function soundFamilyFromTradeName(name = "") {
-  const normalizedName = name.toLowerCase();
-  if (normalizedName.includes("excavat") || normalizedName.includes("earth")) {
-    return "excavator";
-  }
-  if (normalizedName.includes("foundation") || normalizedName.includes("concrete")) {
-    return "foundation";
-  }
-  if (normalizedName.includes("steel") || normalizedName.includes("structure")) {
-    return "pounding";
-  }
-  if (normalizedName.includes("drywall")) return "drywall";
-  if (normalizedName.includes("paint")) return "sanding";
-  if (normalizedName.includes("finish")) return "putty";
-  if (normalizedName.includes("roof") || normalizedName.includes("skin")) return "saw";
-  if (
-    normalizedName.includes("pipe") ||
-    normalizedName.includes("plumb") ||
-    normalizedName.includes("hvac")
-  ) {
-    return "wrench";
-  }
-  if (normalizedName.includes("electric") || normalizedName.includes("commission")) {
-    return "drill";
-  }
-  return "hammer";
-}
-
 function render({ keepIdleTimer = false } = {}) {
   if (!keepIdleTimer) scheduleIdleReturn();
-  syncConstructionAmbience();
-  syncDiceRollSound();
-  syncProjectResultSound();
-  syncCareerVictorySound();
+  syncGameAudio();
 
   if (state.phase === "title") {
     app.innerHTML = withIdleWarning(titleView());
@@ -930,7 +536,7 @@ function towerZone(zoneNumber) {
   const selectedByPlayerTwo =
     state.players?.[1]?.active && state.players[1].selectedZone === zoneNumber;
   const selectionClasses = [
-    selectedByPlayerOne ? "selected-zone selected-zone-p1" : "",
+    selectedByPlayerOne ? "selected-zone-p1" : "",
     selectedByPlayerTwo ? "selected-zone-p2" : "",
   ]
     .filter(Boolean)
@@ -1071,12 +677,13 @@ function workerSprite() {
 }
 
 function tradeDice(trade) {
-  const rolling = state.roundPhase === "rolling" && !trade.finished;
+  const waiting = trade.delayedToday || trade.waitReason;
+  const rolling = state.roundPhase === "rolling" && !trade.finished && !waiting;
   const rolled =
     !rolling &&
     !trade.finished &&
     trade.pendingSteps > 0 &&
-    trade.lastRoll;
+    Number.isInteger(trade.lastRoll);
   if (!rolling && !rolled) return "";
 
   const pushed = trade.pushedUntil > Date.now();
@@ -2312,10 +1919,5 @@ window.addEventListener("blur", () => {
 });
 
 setRenderCallback(render);
-setRoadblockAppearedCallback(playRoadblockAppearedSound);
-setRoadblockResolvedCallback(playRoadblockResolvedSound);
-setWorkerBlockedCallback(playWorkerBlockedSound);
-setWorkerRoadblockedCallback(playWorkerRoadblockedSound);
-setWorkerPushedCallback(playWorkerPushedSound);
-setWorkerWorkCallback(playWorkerWorkSound);
+registerAudioCallbacks();
 render();
