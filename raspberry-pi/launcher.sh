@@ -10,12 +10,20 @@ DATA_DIR="${PI_HOME}/TaktBuilderData"
 PORT="${TAKT_PORT:-8080}"
 LOG_DIR="${DATA_DIR}/logs"
 STATUS_DIR="${DATA_DIR}/status"
+SERVER_PID_FILE="${DATA_DIR}/server.pid"
+CHROMIUM_PID_FILE="${DATA_DIR}/chromium.pid"
 
 mkdir -p "${GAME_DIR}" "${PROFILE_DIR}" "${DATA_DIR}" "${LOG_DIR}" "${STATUS_DIR}"
 
 log() {
   printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "${LOG_DIR}/launcher.log"
 }
+
+exec 9>"${DATA_DIR}/launcher.lock"
+if ! flock -n 9; then
+  log "Another Takt Builder launcher is already running."
+  exit 0
+fi
 
 find_usb_dist() {
   local roots=(
@@ -53,12 +61,42 @@ wait_for_usb_update() {
   return 1
 }
 
+launcher_update_dir_for_dist() {
+  local dist_path="$1"
+  local usb_root
+  usb_root="$(dirname "${dist_path}")"
+
+  local candidate
+  for candidate in "${usb_root}/raspberry-pi" "${dist_path}/raspberry-pi"; do
+    if [ -f "${candidate}/launcher.sh" ] && [ -f "${candidate}/update.sh" ]; then
+      printf '%s\n' "${candidate}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+update_launcher_from_usb() {
+  local dist_path="$1"
+  local launcher_source
+  launcher_source="$(launcher_update_dir_for_dist "${dist_path}" || true)"
+  if [ -z "${launcher_source}" ]; then
+    return 0
+  fi
+
+  log "Launcher update found at ${launcher_source}; installing for next boot."
+  cp "${launcher_source}/launcher.sh" "${INSTALL_DIR}/launcher.sh"
+  cp "${launcher_source}/update.sh" "${INSTALL_DIR}/update.sh"
+  chmod +x "${INSTALL_DIR}/launcher.sh" "${INSTALL_DIR}/update.sh"
+}
+
 write_status_page() {
   local title="$1"
   local message="$2"
   local percent="$3"
   local detail="${4:-}"
-  local refresh="${5:-2}"
+  local revision
+  revision="$(date +%s%N)"
 
   cat >"${STATUS_DIR}/index.html" <<HTML
 <!doctype html>
@@ -66,7 +104,7 @@ write_status_page() {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="refresh" content="${refresh}">
+    <meta name="takt-status-page" content="true">
     <title>${title}</title>
     <style>
       :root {
@@ -80,6 +118,7 @@ write_status_page() {
         min-height: 100vh;
         display: grid;
         place-items: center;
+        cursor: none;
       }
       main {
         width: min(760px, calc(100vw - 48px));
@@ -120,12 +159,42 @@ write_status_page() {
     </style>
   </head>
   <body>
-    <main>
+    <main data-status-revision="${revision}">
       <h1>${title}</h1>
       <p>${message}</p>
-      <div class="bar" aria-label="Update progress"><div class="fill"></div></div>
+      <div class="bar" aria-label="Startup progress"><div class="fill"></div></div>
       <p class="detail">${detail}</p>
     </main>
+    <script>
+      (() => {
+        const currentRevision = "${revision}";
+        const marker = 'name="takt-status-page"';
+        const serverUrl = "http://127.0.0.1:${PORT}/";
+        async function poll() {
+          try {
+            const response = await fetch(serverUrl + '?taktBootProbe=' + Date.now(), { cache: 'no-store' });
+            if (response.ok) {
+              const html = await response.text();
+              if (!html.includes(marker)) {
+                window.location.replace(serverUrl + '?taktLaunch=' + Date.now());
+                return;
+              }
+              const match = html.match(/data-status-revision="([^"]+)"/);
+              if (match && match[1] !== currentRevision) {
+                document.open();
+                document.write(html);
+                document.close();
+                return;
+              }
+            }
+          } catch (error) {
+            // The local server may restart briefly while switching from status to game.
+          }
+          window.setTimeout(poll, 1000);
+        }
+        window.setTimeout(poll, 1000);
+      })();
+    </script>
   </body>
 </html>
 HTML
@@ -134,9 +203,37 @@ HTML
 start_server() {
   local root_dir="$1"
   local log_file="$2"
+  log "Starting local web server for ${root_dir} on port ${PORT}."
   cd "${root_dir}"
   python3 -m http.server "${PORT}" --bind 127.0.0.1 >>"${LOG_DIR}/${log_file}" 2>&1 &
   SERVER_PID="$!"
+  printf '%s\n' "${SERVER_PID}" >"${SERVER_PID_FILE}"
+}
+
+wait_for_server() {
+  local attempt
+  for attempt in $(seq 1 40); do
+    if ! kill -0 "${SERVER_PID}" 2>/dev/null; then
+      log "Local web server stopped unexpectedly."
+      return 1
+    fi
+    if python3 - "${PORT}" >/dev/null 2>&1 <<'PYWAIT'
+import sys
+import urllib.request
+
+port = sys.argv[1]
+with urllib.request.urlopen(f"http://127.0.0.1:{port}", timeout=0.5) as response:
+    if response.status >= 400:
+        raise SystemExit(1)
+PYWAIT
+    then
+      return 0
+    fi
+    sleep 0.25
+  done
+
+  log "Timed out waiting for local web server."
+  return 1
 }
 
 stop_server() {
@@ -145,10 +242,36 @@ stop_server() {
     wait "${SERVER_PID}" 2>/dev/null || true
     SERVER_PID=""
   fi
+  rm -f "${SERVER_PID_FILE}"
 }
 
-start_chromium() {
+stop_chromium() {
+  if [ -n "${CHROMIUM_PID:-}" ]; then
+    kill "${CHROMIUM_PID}" 2>/dev/null || true
+    wait "${CHROMIUM_PID}" 2>/dev/null || true
+    CHROMIUM_PID=""
+  fi
+  pkill -f -- "--user-data-dir=${PROFILE_DIR}" 2>/dev/null || true
+  rm -f "${CHROMIUM_PID_FILE}"
+}
+
+wait_for_display() {
+  local attempt
+  for attempt in $(seq 1 90); do
+    if [ -S "/tmp/.X11-unix/X0" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  log "Timed out waiting for the desktop display."
+  return 1
+}
+
+start_chromium_once() {
+  local launch_url="$1"
   local chromium_bin=""
+  export DISPLAY="${DISPLAY:-:0}"
   export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
   export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
 
@@ -161,8 +284,9 @@ start_chromium() {
     return 1
   fi
 
+  log "Starting Chromium at ${launch_url}."
   "${chromium_bin}" \
-    --kiosk "http://localhost:${PORT}" \
+    --kiosk "${launch_url}" \
     --user-data-dir="${PROFILE_DIR}" \
     --no-first-run \
     --disable-infobars \
@@ -171,39 +295,95 @@ start_chromium() {
     --autoplay-policy=no-user-gesture-required \
     >>"${LOG_DIR}/chromium.log" 2>&1 &
   CHROMIUM_PID="$!"
+  printf '%s\n' "${CHROMIUM_PID}" >"${CHROMIUM_PID_FILE}"
+}
+
+start_chromium() {
+  local launch_url="${1:-http://127.0.0.1:${PORT}/}"
+  local attempt
+  wait_for_display || return 1
+
+  for attempt in $(seq 1 6); do
+    start_chromium_once "${launch_url}" || return 1
+    sleep 2
+    if kill -0 "${CHROMIUM_PID}" 2>/dev/null; then
+      log "Chromium launched."
+      return 0
+    fi
+    wait "${CHROMIUM_PID}" 2>/dev/null || true
+    CHROMIUM_PID=""
+    log "Chromium exited immediately; retrying (${attempt}/6)."
+    sleep 3
+  done
+
+  log "Chromium did not stay open after retries."
+  return 1
+}
+
+cleanup_stale_processes() {
+  local old_pid
+  if [ -f "${CHROMIUM_PID_FILE}" ]; then
+    old_pid="$(cat "${CHROMIUM_PID_FILE}" 2>/dev/null || true)"
+    if [ -n "${old_pid}" ]; then
+      kill "${old_pid}" 2>/dev/null || true
+    fi
+  fi
+  pkill -f -- "--user-data-dir=${PROFILE_DIR}" 2>/dev/null || true
+
+  if [ -f "${SERVER_PID_FILE}" ]; then
+    old_pid="$(cat "${SERVER_PID_FILE}" 2>/dev/null || true)"
+    if [ -n "${old_pid}" ]; then
+      kill "${old_pid}" 2>/dev/null || true
+    fi
+  fi
+  pkill -f -- "python3 -m http.server ${PORT} --bind 127.0.0.1" 2>/dev/null || true
+  rm -f "${SERVER_PID_FILE}" "${CHROMIUM_PID_FILE}"
 }
 
 cleanup() {
-  [ -n "${CHROMIUM_PID:-}" ] && kill "${CHROMIUM_PID}" 2>/dev/null || true
-  [ -n "${SERVER_PID:-}" ] && kill "${SERVER_PID}" 2>/dev/null || true
+  stop_chromium
+  stop_server
 }
 trap cleanup EXIT INT TERM
 
+cleanup_stale_processes
+write_status_page "Takt Builder" "Starting the arcade cabinet." 10 "Checking for USB updates..."
+start_chromium "file://${STATUS_DIR}/index.html" || true
+start_server "${STATUS_DIR}" "server-status.log"
+if wait_for_server; then
+  stop_chromium
+  start_chromium "http://127.0.0.1:${PORT}/" || true
+fi
+
 if usb_dist="$(wait_for_usb_update)"; then
   log "USB update found at ${usb_dist}"
-  write_status_page "Updating Takt Builder" "A USB update was found. Installing the new game now." 12 "Please leave the USB drive inserted."
-  start_server "${STATUS_DIR}" "server-status.log"
-  sleep 1
-  start_chromium || true
-  write_status_page "Updating Takt Builder" "Copying the new build from USB." 35 "Please leave the USB drive inserted."
+  write_status_page "Updating Takt Builder" "A USB update was found. Installing the new game now." 20 "Please leave the USB drive inserted."
+  write_status_page "Updating Takt Builder" "Copying the new build from USB." 45 "Please leave the USB drive inserted."
   if "${INSTALL_DIR}/update.sh" "${usb_dist}" >>"${LOG_DIR}/update.log" 2>&1; then
-    write_status_page "Update Complete" "The game update is complete. You can remove the USB drive now." 100 "Starting Takt Builder..." 1
+    update_launcher_from_usb "${usb_dist}" >>"${LOG_DIR}/update.log" 2>&1 || log "Launcher script update failed; game update still completed."
+    write_status_page "Update Complete" "The game update is complete. You can remove the USB drive now." 100 "Starting Takt Builder..."
     log "USB update completed."
     sleep 5
   else
-    write_status_page "Update Failed" "The USB update did not complete. Launching the previously installed game." 100 "You can remove the USB drive and check logs later." 4
+    write_status_page "Update Failed" "The USB update did not complete. Launching the previously installed game." 100 "You can remove the USB drive and check logs later."
     log "Update failed; launching existing game."
     sleep 6
   fi
-  stop_server
 else
+  write_status_page "Takt Builder" "Starting the installed game." 75 "No USB update found."
   log "No USB update found; launching installed game."
+  sleep 1
 fi
 
+write_status_page "Takt Builder" "Loading the game." 90 "Almost ready..."
+stop_server
 start_server "${GAME_DIR}" "server.log"
-sleep 1
-if [ -z "${CHROMIUM_PID:-}" ]; then
-  start_chromium || true
+if wait_for_server; then
+  if [ -z "${CHROMIUM_PID:-}" ]; then
+    start_chromium || true
+  fi
+else
+  log "Game server did not become ready."
 fi
 
 wait "${SERVER_PID}"

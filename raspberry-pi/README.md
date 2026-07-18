@@ -13,8 +13,9 @@ After `install.sh` is run once on a fresh Pi, normal updates do not require term
 ## Files
 
 - `install.sh` - run once on a fresh Pi.
-- `launcher.service` - systemd service that starts the arcade launcher on boot.
+- `launcher.service` - legacy systemd service reference; `install.sh` disables it and uses desktop autostart for Chromium reliability.
 - `launcher.sh` - boot launcher that checks USB drives, starts the web server, and opens Chromium.
+- `~/.config/autostart/takt-builder.desktop` - desktop-session launcher created by `install.sh`.
 - `update.sh` - replaces the installed game with a supplied `dist` folder.
 - `README.md` - this guide.
 
@@ -27,6 +28,8 @@ cd raspberry-pi
 bash install.sh
 sudo reboot
 ```
+
+`install.sh` only installs or updates the launcher files. It does not intentionally start kiosk mode immediately; the reboot starts the arcade launcher cleanly.
 
 The default Pi user is `admin`. To install for a different user:
 
@@ -42,11 +45,14 @@ If you change `PI_USER`, also update the `User`, `Group`, `HOME`, `XAUTHORITY`, 
 - Launcher scripts: `/home/admin/TaktBuilderLauncher`
 - Chromium profile: `/home/admin/TaktBuilderProfile`
 - Data/log folder: `/home/admin/TaktBuilderData`
-- Service file: `/etc/systemd/system/launcher.service`
+- Legacy service file: `/etc/systemd/system/launcher.service`, disabled by `install.sh`
+- Desktop launcher: `/home/admin/.config/autostart/takt-builder.desktop`
 
 ## Persistence
 
 Game updates replace only `/home/admin/TaktBuilder`, which contains the static Vite build.
+
+Launcher script updates are separate from game updates. If this `raspberry-pi` folder changes, run `install.sh` on the cabinet once to copy the updated launcher scripts into `/home/admin/TaktBuilderLauncher`.
 
 Controller mappings, high scores, and settings are preserved because Chromium is launched with a stable profile:
 
@@ -70,16 +76,19 @@ On boot, `launcher.sh` waits briefly for mounted USB drives and searches these l
 
 The first valid `dist` folder found is installed.
 
+If the USB drive also contains a `raspberry-pi` folder next to `dist`, the launcher copies updated `launcher.sh` and `update.sh` into `/home/admin/TaktBuilderLauncher` for the next boot. This is optional and intended for future launcher fixes; normal game updates only need `dist`.
+
 ## Runtime Behavior
 
 On every boot, the launcher:
 
-1. Looks for a USB `dist` update.
-2. If found, opens a simple update screen with a progress bar.
-3. Runs `update.sh` to replace `/home/admin/TaktBuilder`.
-4. Shows `Update Complete` and tells the operator they can remove the USB drive.
-5. Starts the installed game at `http://localhost:8080`.
-6. Opens Chromium in kiosk mode at that local URL.
+1. The Pi desktop autostart runs the launcher from the logged-in graphical session.
+2. The launcher opens Chromium quickly to a local Takt Builder startup screen.
+3. Looks for a USB `dist` update while that startup screen is visible.
+4. If found, updates the startup screen with progress while `update.sh` replaces `/home/admin/TaktBuilder`.
+5. Shows `Update Complete` and tells the operator they can remove the USB drive.
+6. Starts the installed game at `http://localhost:8080`.
+7. Lets the startup screen automatically hand off to the game once the local game server is ready.
 
 If no USB update is found, it launches the currently installed game.
 
@@ -104,6 +113,22 @@ Useful files:
 - `server.log`
 - `server-status.log`
 - `chromium.log`
+
+If the Pi boots to a white screen or the desktop instead of the game, check the launcher logs with:
+
+```sh
+cat /home/admin/TaktBuilderData/logs/launcher.log
+cat /home/admin/TaktBuilderData/logs/chromium.log
+```
+
+The installer disables the older system service path. To confirm it is disabled:
+
+```sh
+systemctl is-enabled launcher.service
+systemctl is-active launcher.service
+```
+
+Both commands should report `disabled` or `inactive` after installation.
 
 ## Development Update Workflow
 

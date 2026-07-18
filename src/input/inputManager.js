@@ -189,9 +189,11 @@ export class InputManager {
     const gamepads = this.refreshConnectedGamepads();
     const nextHeld = Array.from({ length: PLAYER_COUNT }, () => ({}));
 
+    const claimedGamepadIndexes = new Set();
     this.mappings.players.forEach((playerMapping, playerIndex) => {
-      const gamepad = this.gamepadForPlayer(playerMapping, gamepads);
+      const gamepad = this.gamepadForPlayer(playerMapping, gamepads, claimedGamepadIndexes);
       if (!gamepad) return;
+      claimedGamepadIndexes.add(gamepad.index);
       Object.entries(playerMapping.actions).forEach(([action, binding]) => {
         nextHeld[playerIndex][action] = bindingPressed(binding, gamepad);
       });
@@ -205,28 +207,45 @@ export class InputManager {
     this.held = nextHeld;
   }
 
-  gamepadForPlayer(playerMapping, gamepads = this.connected) {
+  gamepadForPlayer(playerMapping, gamepads = this.connected, claimedGamepadIndexes = new Set()) {
     if (!playerMapping) return null;
-    const byId = playerMapping.gamepadId
-      ? gamepads.find((gamepad) => gamepad.id === playerMapping.gamepadId)
+    const available = gamepads.filter((gamepad) => !claimedGamepadIndexes.has(gamepad.index));
+    const byIdAndIndex = playerMapping.gamepadId && Number.isInteger(playerMapping.gamepadIndex)
+      ? available.find(
+        (gamepad) => gamepad.id === playerMapping.gamepadId && gamepad.index === playerMapping.gamepadIndex,
+      )
       : null;
-    if (byId) return byId;
+    if (byIdAndIndex) return byIdAndIndex;
+
     const byIndex = Number.isInteger(playerMapping.gamepadIndex)
-      ? gamepads.find((gamepad) => gamepad.index === playerMapping.gamepadIndex)
+      ? available.find((gamepad) => gamepad.index === playerMapping.gamepadIndex)
       : null;
     if (byIndex) return byIndex;
-    return gamepads[playerMapping.playerIndex] || null;
+
+    const byId = playerMapping.gamepadId
+      ? available.find((gamepad) => gamepad.id === playerMapping.gamepadId)
+      : null;
+    if (byId) return byId;
+
+    return available[playerMapping.playerIndex] || available[0] || null;
   }
 
   playerIndexForGamepad(gamepad) {
     const exact = this.mappings.players.findIndex(
-      (mapping) => mapping.gamepadId && mapping.gamepadId === gamepad.id,
+      (mapping) => mapping.gamepadId &&
+        mapping.gamepadId === gamepad.id &&
+        Number.isInteger(mapping.gamepadIndex) &&
+        mapping.gamepadIndex === gamepad.index,
     );
     if (exact >= 0) return exact;
     const indexed = this.mappings.players.findIndex(
       (mapping) => Number.isInteger(mapping.gamepadIndex) && mapping.gamepadIndex === gamepad.index,
     );
-    return indexed >= 0 ? indexed : gamepad.index < PLAYER_COUNT ? gamepad.index : null;
+    if (indexed >= 0) return indexed;
+    const byId = this.mappings.players.findIndex(
+      (mapping) => mapping.gamepadId && mapping.gamepadId === gamepad.id,
+    );
+    return byId >= 0 ? byId : gamepad.index < PLAYER_COUNT ? gamepad.index : null;
   }
 
   emit(event) {

@@ -5,3 +5,10 @@
 @import "./styles/arcade-controls.css";
 @import "./styles/results-overlays.css";
 @import "./styles/responsive.css";
+
+html,
+body,
+#app,
+#app * {
+  cursor: none !important;
+}

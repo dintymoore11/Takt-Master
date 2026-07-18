@@ -1,13 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { INPUT_ACTIONS } from "./actions.js";
+import { INPUT_ACTIONS, PLAYER_ACTION_SEQUENCE } from "./actions.js";
 import {
   bindingPressed,
   directionalInterpretation,
   edgeEvents,
+  InputManager,
   KEYBOARD_BINDINGS,
 } from "./inputManager.js";
+import { defaultControllerMappings } from "./controllerStorage.js";
 
 test("button mappings normalize gamepad button pressed state", () => {
   const gamepad = {
@@ -59,4 +61,41 @@ test("directional interpretation exposes four joystick directions", () => {
     left: false,
     right: true,
   });
+});
+
+
+test("control mapper prompts identify roadblocks before push trade", () => {
+  const identifyIndex = PLAYER_ACTION_SEQUENCE.indexOf(INPUT_ACTIONS.IDENTIFY_ROADBLOCKS);
+  const pushIndex = PLAYER_ACTION_SEQUENCE.indexOf(INPUT_ACTIONS.PUSH_TRADE);
+
+  assert.equal(identifyIndex, pushIndex - 1);
+});
+
+
+test("identical gamepad ids still route to separate mapped players", () => {
+  const storage = {
+    getItem: () => null,
+    setItem: () => {},
+  };
+  const manager = new InputManager({ storage });
+  const mappings = defaultControllerMappings();
+  mappings.players[0].gamepadId = "Generic USB Joystick";
+  mappings.players[0].gamepadIndex = 0;
+  mappings.players[1].gamepadId = "Generic USB Joystick";
+  mappings.players[1].gamepadIndex = 1;
+  manager.updateMappings(mappings);
+
+  const gamepads = [
+    { id: "Generic USB Joystick", index: 0, buttons: [], axes: [] },
+    { id: "Generic USB Joystick", index: 1, buttons: [], axes: [] },
+  ];
+  const claimed = new Set();
+  const playerOnePad = manager.gamepadForPlayer(mappings.players[0], gamepads, claimed);
+  claimed.add(playerOnePad.index);
+  const playerTwoPad = manager.gamepadForPlayer(mappings.players[1], gamepads, claimed);
+
+  assert.equal(playerOnePad.index, 0);
+  assert.equal(playerTwoPad.index, 1);
+  assert.equal(manager.playerIndexForGamepad(gamepads[0]), 0);
+  assert.equal(manager.playerIndexForGamepad(gamepads[1]), 1);
 });

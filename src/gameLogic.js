@@ -166,6 +166,8 @@ export function resetProject(mode) {
   state.selectedRoadblockIndex = 0;
   state.trades = createTrades();
   state.roadblocks = [];
+  state.roadblockBudget = plannedRoadblockBudget();
+  state.roadblocksCreated = 0;
   state.identifiedTradeIds = new Set();
   state.lastTradeByZone = {};
   state.workerHoldUpCount = 0;
@@ -422,9 +424,17 @@ export function moveTradeOneZone(
 export function recordZoneWork(trade, zone) {
   state.zoneWorkThisRound.add(zone);
   trade.zoneWorkWeeks[zone] = trade.zoneWorkWeeks[zone] ?? [];
+  trade.zoneWorkSegments = trade.zoneWorkSegments ?? {};
+  trade.zoneWorkOrderByDay = trade.zoneWorkOrderByDay ?? {};
+  trade.zoneWorkSegments[zone] = trade.zoneWorkSegments[zone] ?? [];
+
   const alreadyWorkedToday = trade.zoneWorkWeeks[zone].includes(state.day);
   if (!alreadyWorkedToday) {
+    const dayKey = String(state.day);
+    const order = trade.zoneWorkOrderByDay[dayKey] ?? 0;
+    trade.zoneWorkOrderByDay[dayKey] = order + 1;
     trade.zoneWorkWeeks[zone].push(state.day);
+    trade.zoneWorkSegments[zone].push({ day: state.day, order });
     workerWorkCallback(trade, zone);
   }
 }
@@ -482,7 +492,49 @@ export function maybeSpawnRoadblock() {
   }
 }
 
+function plannedRoadblockBudget() {
+  const expectedSpawns = roadblockSpawnPressure() * gameplayDuration();
+  const levelAllowance = Math.max(1, campaignLevel()) * 2;
+  return Math.max(1, Math.round(expectedSpawns) + levelAllowance);
+}
+
+function canCreateRoadblock() {
+  return (state.roadblocksCreated ?? 0) < (state.roadblockBudget ?? Infinity);
+}
+
+function createRoadblock(trade, zone, { identified = false } = {}) {
+  if (!canCreateRoadblock()) return null;
+
+  state.roadblocksCreated = (state.roadblocksCreated ?? 0) + 1;
+  return {
+    id: crypto.randomUUID(),
+    tradeId: trade.id,
+    zone,
+    label: randomRoadblockLabel(),
+    visualKey: "barricade",
+    resolved: false,
+    revealed: true,
+    identified,
+    revealAnimationPending: identified,
+    delayDays: 0,
+    delayNotified: false,
+    delayNotifiedTradeIds: new Set(),
+    lastDelayPenalizedDay: null,
+  };
+}
+
+function randomRoadblockLabel() {
+  return randomFrom([
+    "Permit hold",
+    "Missing material",
+    "Design answer",
+    "Inspection issue",
+  ]);
+}
+
 function spawnRoadblock() {
+  if (!canCreateRoadblock()) return false;
+
   const candidates = state.trades.filter(
     (trade, index) =>
       index < activeTradeCount() &&
@@ -501,25 +553,8 @@ function spawnRoadblock() {
   );
   if (alreadyExists) return false;
 
-  const roadblock = {
-    id: crypto.randomUUID(),
-    tradeId: trade.id,
-    zone,
-    label: randomFrom([
-      "Permit hold",
-      "Missing material",
-      "Design answer",
-      "Inspection issue",
-    ]),
-    visualKey: "barricade",
-    resolved: false,
-    revealed: true,
-    identified: false,
-    delayDays: 0,
-    delayNotified: false,
-    delayNotifiedTradeIds: new Set(),
-    lastDelayPenalizedDay: null,
-  };
+  const roadblock = createRoadblock(trade, zone);
+  if (!roadblock) return false;
   state.roadblocks.push(roadblock);
   roadblockAppearedCallback(roadblock, trade);
   addLog(`Roadblock spawned for ${trade.name} at zone ${zone}.`);
@@ -582,7 +617,10 @@ export function projectCostScale() {
 }
 
 export function scaledLaborCost(baseCost, moraleMultiplier = 1) {
-  return Math.round(baseCost * moraleMultiplier * projectCostScale());
+  const laborMultiplier = currentProject().laborCostMultiplier ?? 1;
+  return Math.round(
+    baseCost * moraleMultiplier * laborMultiplier * projectCostScale(),
+  );
 }
 
 export function dailyDelayCost() {
@@ -797,26 +835,8 @@ export function identifyRoadblocksForTrade(targetTrade = tradeForSelectedZonePus
   for (let index = 0; index < neededCount && candidateZones.length > 0; index += 1) {
     const candidateIndex = randomInt(0, candidateZones.length - 1);
     const zone = candidateZones.splice(candidateIndex, 1)[0];
-    const roadblock = {
-      id: crypto.randomUUID(),
-      tradeId: trade.id,
-      zone,
-      label: randomFrom([
-        "Permit hold",
-        "Missing material",
-        "Design answer",
-        "Inspection issue",
-      ]),
-      visualKey: "barricade",
-      resolved: false,
-      revealed: true,
-      identified: true,
-      revealAnimationPending: true,
-      delayDays: 0,
-      delayNotified: false,
-      delayNotifiedTradeIds: new Set(),
-      lastDelayPenalizedDay: null,
-    };
+    const roadblock = createRoadblock(trade, zone, { identified: true });
+    if (!roadblock) break;
     state.roadblocks.push(roadblock);
     roadblockAppearedCallback(roadblock, trade);
     revealedCount += 1;
@@ -829,6 +849,7 @@ export function identifyRoadblocksForTrade(targetTrade = tradeForSelectedZonePus
 export function endProject() {
   stopTimer();
   applyLiquidatedDamages();
+  applyProfitCap();
   state.totalProfit += state.profit;
   state.gameOver = state.profit < 0;
   state.phase = state.gameOver ? "gameOver" : "ended";
@@ -840,6 +861,14 @@ export function endProject() {
     state.nameCursor = 0;
   }
   addLog(`Project finished on day ${state.day}.`);
+}
+
+function applyProfitCap() {
+  const maxProfitMargin = state.mode?.maxProfitMargin;
+  if (!Number.isFinite(maxProfitMargin)) return;
+
+  const maxProfit = Math.round(projectBudget() * maxProfitMargin);
+  state.profit = Math.min(state.profit, maxProfit);
 }
 
 export function quitToLeaderboard() {
@@ -931,16 +960,30 @@ export function joinPlayer(playerIndex = 0) {
   player.active = true;
   if (!player.selectedZone) player.selectedZone = state.selectedZone || 1;
   if (!Number.isInteger(player.selectedTradeIndex)) player.selectedTradeIndex = 0;
-  if (playerIndex > 0) state.hadTwoPlayers = true;
+  if (playerIndex > 0 || activePlayers().length > 1) state.hadTwoPlayers = true;
+  player.selectedZone = openSelectionZoneForPlayer(playerIndex);
+  syncLegacySelection();
+  notifyRender();
+}
+
+export function setSoloActivePlayer(playerIndex = 0) {
+  ensurePlayers();
+  state.players.forEach((player, index) => {
+    player.active = index === playerIndex;
+    if (!player.selectedZone) player.selectedZone = state.selectedZone || 1;
+    if (!Number.isInteger(player.selectedTradeIndex)) player.selectedTradeIndex = 0;
+  });
+  const player = playerState(playerIndex);
   player.selectedZone = openSelectionZoneForPlayer(playerIndex);
   syncLegacySelection();
   notifyRender();
 }
 
 export function leavePlayer(playerIndex = 0) {
-  if (playerIndex <= 0) return false;
   const player = playerState(playerIndex);
+  if (!player.active || activePlayers().length <= 1) return false;
   player.active = false;
+  syncLegacySelection();
   notifyRender();
   return true;
 }

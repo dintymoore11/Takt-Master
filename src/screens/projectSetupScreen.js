@@ -101,7 +101,7 @@ export function setupView() {
         <section class="mode-grid setup-mode-grid" aria-label="Variability mode">
           ${MODES.map(
             (mode, index) => `
-              <button class="mode-button ${index === selectedModeIndex ? "selected" : ""}" data-mode="${index}" type="button" aria-pressed="${index === selectedModeIndex}">
+              <button class="mode-button ${index === selectedModeIndex ? "selected" : ""} ${index === state.setupConfirmModeIndex ? "confirming" : ""}" data-mode="${index}" type="button" aria-pressed="${index === selectedModeIndex}">
                 <span class="mode-key">${index + 1}</span>
                 <span class="mode-icon ${modeIconClass(index)}" aria-hidden="true"></span>
                 <span class="mode-title">${mode.name}</span>

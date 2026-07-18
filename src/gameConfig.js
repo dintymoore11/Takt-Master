@@ -6,6 +6,7 @@ export const PROJECTS = [
     zonesPerLevel: 6,
     budget: 3500000,
     duration: 100,
+    laborCostMultiplier: 0.408,
     roadblockChanceBonus: 0.05,
     summary: "Office building",
     trades: [
@@ -29,6 +30,7 @@ export const PROJECTS = [
     zonesPerLevel: 6,
     budget: 23500000,
     duration: 255,
+    laborCostMultiplier: 0.442,
     summary: "Hospital project",
     trades: [
       { key: "framing", name: "Framing", color: "#7d8790", baseCost: 1850 },
@@ -69,6 +71,7 @@ export const PROJECTS = [
     zoneColumns: 5,
     budget: 15000000,
     duration: 120,
+    laborCostMultiplier: 0.409,
     summary: "Wind farm field",
     trades: [
       {
@@ -138,6 +141,7 @@ export const PROJECTS = [
     zoneColumns: 5,
     budget: 24000000,
     duration: 240,
+    laborCostMultiplier: 0.467,
     summary: "Housing development",
     trades: [
       {
@@ -205,6 +209,7 @@ export const PROJECTS = [
     zoneColumns: 6,
     budget: 12000000,
     duration: 210,
+    laborCostMultiplier: 0.54,
     summary: "Solar farm array",
     trades: [
       {
@@ -260,6 +265,7 @@ export const PROJECTS = [
     zoneColumns: 6,
     budget: 120000000,
     duration: 580,
+    laborCostMultiplier: 0.56,
     summary: "Industrial processing plant",
     trades: [
       {
@@ -328,6 +334,7 @@ export const PROJECTS = [
     zoneColumns: 6,
     budget: 650000000,
     duration: 420,
+    laborCostMultiplier: 0.564,
     summary: "Data center level",
     trades: [
       {
@@ -480,7 +487,12 @@ export const NAME_KEYS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 export const NAME_ACTIONS = ["SPACE", "DEL", "SAVE"];
 
 export const MODES = [
-  { name: "Low Variability", dice: [3, 4], note: "Reliable takt rhythm" },
+  {
+    name: "Low Variability",
+    dice: [3, 4],
+    note: "Reliable takt rhythm",
+    maxProfitMargin: 0.5,
+  },
   {
     name: "Medium Variability",
     dice: [2, 3, 4, 5],

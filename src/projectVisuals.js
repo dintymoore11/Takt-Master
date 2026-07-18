@@ -267,6 +267,10 @@ export function projectZoneStyle(project, zoneNumber) {
 }
 
 export function projectZoneForDirection(project, currentZone, direction) {
+  if (project?.type === "industrial-plant" && currentZone === 25 && direction === "ArrowUp") {
+    return 22;
+  }
+
   const fullSiteProject = FULL_SITE_PROJECTS[project?.type];
   if (!fullSiteProject?.spatialNavigation) return undefined;
 

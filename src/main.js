@@ -80,6 +80,7 @@ import {
   selectNameKey,
   setPlayerSelectedZone,
   setRenderCallback,
+  setSoloActivePlayer,
   startCampaign,
   startNextProject,
   state,
@@ -103,7 +104,7 @@ import {
 const IDLE_RETURN_MS = 90_000;
 const IDLE_WARNING_SECONDS = 30;
 const PROJECT_SELECTOR_HOLD_MS = 3_000;
-const MAINTENANCE_HOLD_MS = 5_000;
+const MAINTENANCE_HOLD_MS = 3_000;
 const MENU_SELECT_CODES = new Set([
   "Space",
   "KeyF",
@@ -128,6 +129,8 @@ let leaderboardResetMenuIndex = 1;
 let inputTesterRaf = null;
 let mapperRaf = null;
 let mapperSession = null;
+let mapperInputSuppressUntil = 0;
+let setupStartTimer = null;
 
 const GAME_TITLE = "Takt Builder";
 
@@ -208,6 +211,34 @@ function closeIdleWarning({ resume = true } = {}) {
   state.idleWarningActionIndex = 0;
   if (resume) scheduleIdleReturn();
   render({ keepIdleTimer: true });
+}
+
+function confirmIdleWarningQuit() {
+  stopIdleWarningCountdown();
+  state.idleWarningOpen = false;
+  state.idleWarningRemaining = IDLE_WARNING_SECONDS;
+  state.idleWarningActionIndex = 0;
+  returnToTitle();
+}
+
+function moveIdleWarningSelection(direction) {
+  if (direction === "ArrowLeft" || direction === "ArrowUp") {
+    state.idleWarningActionIndex = 0;
+  } else if (direction === "ArrowRight" || direction === "ArrowDown") {
+    state.idleWarningActionIndex = 1;
+  } else {
+    return false;
+  }
+  render({ keepIdleTimer: true });
+  return true;
+}
+
+function activateIdleWarningSelection() {
+  if (state.idleWarningActionIndex === 0) {
+    closeIdleWarning();
+  } else {
+    confirmIdleWarningQuit();
+  }
 }
 
 function startIdleWarningCountdown() {
@@ -374,6 +405,7 @@ function quitConfirmationView() {
 
 function selectSetupMode(index) {
   state.setupModeIndex = Math.min(Math.max(index, 0), MODES.length - 1);
+  state.setupConfirmModeIndex = null;
   render();
 }
 
@@ -381,11 +413,40 @@ function startSetupProject(modeIndex = setupModeIndex()) {
   const mode = MODES[modeIndex];
   if (!mode) return;
 
+  clearSetupStartTimer();
+  state.setupConfirmModeIndex = null;
   if (state.projectRound === 1 && state.totalProfit === 0) {
     startCampaign(mode);
   } else {
     resetProject(mode);
   }
+}
+
+function clearSetupStartTimer() {
+  if (!setupStartTimer) return;
+  window.clearTimeout(setupStartTimer);
+  setupStartTimer = null;
+}
+
+function confirmSetupModeWithFeedback(modeIndex) {
+  const normalizedModeIndex = Math.min(Math.max(modeIndex, 0), MODES.length - 1);
+  clearSetupStartTimer();
+  state.setupModeIndex = normalizedModeIndex;
+  state.setupConfirmModeIndex = normalizedModeIndex;
+  render();
+  setupStartTimer = window.setTimeout(() => {
+    setupStartTimer = null;
+    if (state.phase !== "setup") return;
+    startSetupProject(normalizedModeIndex);
+  }, 450);
+}
+
+function isSetupConfirmAction(action) {
+  return [
+    INPUT_ACTIONS.REMOVE_ROADBLOCK,
+    INPUT_ACTIONS.IDENTIFY_ROADBLOCKS,
+    INPUT_ACTIONS.PUSH_TRADE,
+  ].includes(action);
 }
 
 function gameView() {
@@ -801,13 +862,9 @@ function endScreen() {
   const margin = (state.profit / projectBudget()) * 100;
   const failed = state.gameOver;
   const scheduleVariance = projectDuration() - projectDay();
-  const resultTitle = failed ? "Career Over" : "Complete";
-  const resultLead = failed
-    ? "The project went over budget."
-    : "The project finished successfully.";
-  const resultSubcopy = failed
-    ? "Better planning. Better flow."
-    : "Strong flow. Clean handoffs. Keep building.";
+  const resultTitle = failed
+    ? "Career Over"
+    : `Project ${state.projectRound} Completed Successfully`;
   const actionButtons = failed
     ? `<button class="restart selected-action" type="button" data-game-over>${leaderboardQualifies(state.totalProfit) ? "Enter Name" : "Game Over"}</button>`
     : `<button class="restart selected-action" type="button" data-restart>${isFinalProjectInLevel() ? "Finish Round" : "Next Project"}</button>`;
@@ -826,15 +883,10 @@ function endScreen() {
         <header class="end-result-heading">
           <span class="end-result-icon" aria-hidden="true"></span>
           ${state.liquidatedDamages > 0 ? `<div class="damages-flash">Liquidated damages <strong>-${formatMoney(state.liquidatedDamages)}</strong></div>` : ""}
-          <div>
-            <p class="eyebrow">Project ${state.projectRound}</p>
-            <h2>${resultTitle}</h2>
-            <p class="end-result-lead">${resultLead}</p>
-            <p class="final-score">${resultSubcopy}</p>
-          </div>
+          <h2>${resultTitle}</h2>
         </header>
         <div class="end-profit-summary">
-          ${endStat("Total profit", `${formatMoney(state.profit)} (${margin.toFixed(1)}%)`, state.profit < 0 ? "bad" : "")}
+          ${endStat("Project Profit", `${formatMoney(state.profit)} (${margin.toFixed(1)}%)`, state.profit < 0 ? "bad" : "")}
           ${endStat("Career profit", formatMoney(state.totalProfit), state.totalProfit < 0 ? "bad" : "")}
         </div>
         <div class="end-stats">
@@ -917,8 +969,8 @@ function zonePlanBars(bars) {
       ({ trade, start, end, lane }) => `
         <span
           class="plan-bar"
-          style="--start: ${start}; --duration: ${end - start + 1}; --lane: ${lane}; background: ${trade.color}"
-          title="${trade.name}, ${PERIOD_LABEL.toLowerCase()} ${projectDay(start)}-${projectDay(end)}"
+          style="--left: ${start.toFixed(4)}; --width: ${Math.max(0.035, end - start).toFixed(4)}; --lane: ${lane}; background: ${trade.color}"
+          title="${trade.name}, ${PERIOD_LABEL.toLowerCase()} ${formatScaledScheduleDay(start)}-${formatScaledScheduleDay(end)}"
         ></span>
       `,
     )
@@ -932,7 +984,7 @@ function zonePlanEntries(zone, periods) {
 
   const laneEnds = [];
   const bars = spans.map((span) => {
-    let lane = laneEnds.findIndex((end) => end < span.start);
+    let lane = laneEnds.findIndex((end) => end <= span.start + 0.0001);
     if (lane === -1) {
       lane = laneEnds.length;
       laneEnds.push(0);
@@ -1035,8 +1087,25 @@ function zoneWorkSpans(trade, zone, weeks) {
 
   if (workedWeeks.length === 0) return [];
 
+  const recordedSegments = trade.zoneWorkSegments?.[zone] ?? [];
+  const segments = recordedSegments.filter((segment) =>
+    workedWeeks.includes(segment.day),
+  );
+
+  if (segments.length > 0) {
+    return segments.map((segment) => {
+      const daySegmentCount = Math.max(
+        1,
+        tradeWorkSegmentCountForDay(trade, segment.day),
+      );
+      const start = segment.day - 1 + segment.order / daySegmentCount;
+      const end = segment.day - 1 + (segment.order + 1) / daySegmentCount;
+      return { trade, start, end };
+    });
+  }
+
   const spans = [];
-  let start = workedWeeks[0];
+  let start = workedWeeks[0] - 1;
   let previous = workedWeeks[0];
 
   workedWeeks.slice(1).forEach((week) => {
@@ -1045,12 +1114,31 @@ function zoneWorkSpans(trade, zone, weeks) {
       return;
     }
     spans.push({ trade, start, end: previous });
-    start = week;
+    start = week - 1;
     previous = week;
   });
 
   spans.push({ trade, start, end: previous });
   return spans;
+}
+
+function tradeWorkSegmentCountForDay(trade, day) {
+  const recordedCount = trade.zoneWorkOrderByDay?.[String(day)];
+  if (Number.isFinite(recordedCount) && recordedCount > 0) return recordedCount;
+
+  return Object.values(trade.zoneWorkSegments ?? {}).reduce(
+    (count, segments) =>
+      count + segments.filter((segment) => segment.day === day).length,
+    0,
+  );
+}
+
+function formatScaledScheduleDay(elapsedPeriods) {
+  const ratio = projectDuration() / gameplayDuration();
+  const scaledDay = Math.max(1, elapsedPeriods * ratio);
+  return Number.isInteger(scaledDay)
+    ? String(scaledDay)
+    : scaledDay.toFixed(1).replace(/\.0$/, "");
 }
 
 function zonesForPlanLevel(level) {
@@ -1271,13 +1359,7 @@ function bindIdleWarning() {
     ?.addEventListener("click", () => closeIdleWarning());
   document
     .querySelector("[data-idle-quit]")
-    ?.addEventListener("click", () => {
-      stopIdleWarningCountdown();
-      state.idleWarningOpen = false;
-      state.idleWarningRemaining = IDLE_WARNING_SECONDS;
-      state.idleWarningActionIndex = 0;
-      returnToTitle();
-    });
+    ?.addEventListener("click", confirmIdleWarningQuit);
 }
 
 function bindQuitConfirmation() {
@@ -1318,6 +1400,9 @@ function bindMaintenance() {
       inputManager.resetMappings();
       closeMaintenance();
     });
+  document
+    .querySelector("[data-maintenance-reset-leaderboard]")
+    ?.addEventListener("click", openLeaderboardResetConfirmation);
 }
 
 function bindLeaderboardResetConfirm() {
@@ -1434,7 +1519,9 @@ function openControlMapper() {
 }
 
 function openLeaderboardResetConfirmation() {
-  previousPhaseBeforeMaintenance = state.phase;
+  if (state.phase !== "maintenance") {
+    previousPhaseBeforeMaintenance = state.phase;
+  }
   cancelMaintenanceHold();
   cancelLeaderboardResetHold();
   leaderboardResetMenuIndex = 1;
@@ -1468,6 +1555,8 @@ function activateMaintenanceMenu() {
   } else if (maintenanceMenuIndex === 3) {
     inputManager.resetMappings();
     closeMaintenance();
+  } else if (maintenanceMenuIndex === 4) {
+    openLeaderboardResetConfirmation();
   }
 }
 
@@ -1572,6 +1661,7 @@ function captureMapperStep() {
   if (binding.type === "button") {
     mapperSession.usedButtons[mapperSession.playerIndex].add(binding.button);
   }
+  mapperInputSuppressUntil = window.performance.now() + 700;
   advanceMapperStep();
   return true;
 }
@@ -1678,13 +1768,13 @@ function activateMapperMenu() {
   if (!mapperSession.playerComplete) return false;
 
   if (mapperSession.menuIndex === 0) {
-    saveMapperPlayer();
-  } else if (mapperSession.menuIndex === 1) {
     if (mapperSession.playerIndex + 1 < mapperSession.mappings.players.length) {
       saveMapperPlayerAndContinue();
     } else {
       finishMapper();
     }
+  } else if (mapperSession.menuIndex === 1) {
+    saveMapperPlayer();
   } else if (mapperSession.menuIndex === 2) {
     mapperBack();
   } else {
@@ -1772,8 +1862,46 @@ function modeIndexForAction(action) {
   ].indexOf(action);
 }
 
+function isArcadeAdvanceAction(action) {
+  return action !== INPUT_ACTIONS.BACK && !directionForAction(action);
+}
+
+function advancePostProjectScreen() {
+  if (state.phase === "scoreResult") {
+    returnToTitle();
+    return true;
+  }
+  if (state.phase === "gameComplete") {
+    finishCareer();
+    return true;
+  }
+  if (state.phase === "win") {
+    startNextProject();
+    return true;
+  }
+  if (state.phase === "gameOver" || state.gameOver) {
+    finishCareer();
+    return true;
+  }
+  if (state.phase === "ended") {
+    restartEndProject();
+    return true;
+  }
+  return false;
+}
+
 function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
   const direction = directionForAction(action);
+
+  if (state.idleWarningOpen) {
+    preventDefault();
+    if (direction) {
+      moveIdleWarningSelection(direction);
+    } else {
+      activateIdleWarningSelection();
+    }
+    return true;
+  }
 
   if (state.quitConfirm) {
     preventDefault();
@@ -1788,13 +1916,8 @@ function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
   if (state.phase === "maintenance") {
     if (direction) {
       preventDefault();
-      maintenanceMenuIndex = moveMenuIndex(maintenanceMenuIndex, direction, 4);
+      maintenanceMenuIndex = moveMenuIndex(maintenanceMenuIndex, direction, 5);
       render({ keepIdleTimer: true });
-      return true;
-    }
-    if (action === INPUT_ACTIONS.START) {
-      preventDefault();
-      activateMaintenanceMenu();
       return true;
     }
     if (action === INPUT_ACTIONS.BACK) {
@@ -1802,7 +1925,9 @@ function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
       closeMaintenance();
       return true;
     }
-    return false;
+    preventDefault();
+    activateMaintenanceMenu();
+    return true;
   }
 
   if (state.phase === "inputTest") {
@@ -1815,7 +1940,15 @@ function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
   }
 
   if (state.phase === "controlMapper") {
+    if (window.performance.now() < mapperInputSuppressUntil) {
+      preventDefault();
+      return true;
+    }
     if (direction && moveMapperMenu(direction)) {
+      preventDefault();
+      return true;
+    }
+    if (!direction && action !== INPUT_ACTIONS.BACK && activateMapperMenu()) {
       preventDefault();
       return true;
     }
@@ -1839,15 +1972,12 @@ function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
       render({ keepIdleTimer: true });
       return true;
     }
-    if (action === INPUT_ACTIONS.START) {
-      activateLeaderboardResetMenu();
-      return true;
-    }
     if (action === INPUT_ACTIONS.BACK) {
       closeLeaderboardResetConfirmation();
       return true;
     }
-    return false;
+    activateLeaderboardResetMenu();
+    return true;
   }
 
   if (state.phase === "leaderboardResetComplete") {
@@ -1859,20 +1989,54 @@ function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
     return false;
   }
 
-  if (state.phase === "nameEntry") return false;
+  if (state.phase === "nameEntry") {
+    preventDefault();
+    if (direction) {
+      moveNameEntryCursor(direction.replace("Arrow", "").toLowerCase());
+      render();
+    } else {
+      activateNameEntryControl();
+    }
+    return true;
+  }
+
+  if (["scoreResult", "win", "gameComplete", "ended", "gameOver"].includes(state.phase)) {
+    if (isArcadeAdvanceAction(action)) {
+      preventDefault();
+      return advancePostProjectScreen();
+    }
+    if (action === INPUT_ACTIONS.BACK) {
+      preventDefault();
+      if (state.phase === "scoreResult") returnToTitle();
+      else openQuitConfirmation();
+      return true;
+    }
+    return false;
+  }
 
   const modeIndex = modeIndexForAction(action);
 
+  if (state.phase === "title" && state.projectSelectorOpen) {
+    preventDefault();
+    if (direction) {
+      moveProjectSelector(direction);
+      render();
+    } else if (action === INPUT_ACTIONS.BACK) {
+      if (!projectSelectorSuppressExitCode) closeProjectSelector();
+    } else {
+      activateProjectSelectorControl();
+    }
+    return true;
+  }
+
   if (action === INPUT_ACTIONS.START) {
     preventDefault();
-    if (state.phase === "title" && state.projectSelectorOpen) {
-      activateProjectSelectorControl();
-      return true;
-    }
-    joinPlayer(playerIndex);
     if (state.phase === "title" && !state.projectSelectorOpen) {
+      setSoloActivePlayer(playerIndex);
       state.phase = "setup";
       render();
+    } else {
+      joinPlayer(playerIndex);
     }
     return true;
   }
@@ -1888,8 +2052,10 @@ function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
     }
     if (state.phase === "title" && state.projectSelectorOpen) {
       closeProjectSelector();
-    } else if (playerIndex > 0 && state.players?.[playerIndex]?.active) {
-      leavePlayer(playerIndex);
+    } else if (state.phase === "running") {
+      if (!state.players?.[playerIndex]?.active) return true;
+      if (leavePlayer(playerIndex)) render();
+      else openQuitConfirmation();
     } else if (state.phase !== "title") {
       openQuitConfirmation();
     }
@@ -1905,8 +2071,7 @@ function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
 
   if (state.phase === "setup" && modeIndex >= 0) {
     preventDefault();
-    state.setupModeIndex = modeIndex;
-    startSetupProject(modeIndex);
+    confirmSetupModeWithFeedback(modeIndex);
     return true;
   }
 
@@ -1917,6 +2082,12 @@ function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
     } else {
       selectSetupMode(setupModeIndex() + 1);
     }
+    return true;
+  }
+
+  if (state.phase === "setup" && isSetupConfirmAction(action)) {
+    preventDefault();
+    startSetupProject();
     return true;
   }
 
@@ -1965,12 +2136,24 @@ function isMenuSelectEvent(event) {
   return event.key === "Enter" || MENU_SELECT_CODES.has(event.code);
 }
 
+function projectSelectorHoldAllowed() {
+  return (
+    state.phase === "title" &&
+    !state.projectSelectorOpen &&
+    !state.idleWarningOpen &&
+    !state.quitConfirm
+  );
+}
+
+function openProjectSelectorFromHold(suppressCode = null) {
+  projectSelectorSuppressExitCode = suppressCode;
+  projectSelectorHoldTimer = null;
+  projectSelectorHoldCode = null;
+  openProjectSelector();
+}
+
 function startProjectSelectorHold(event) {
-  if (
-    state.phase !== "title" ||
-    state.projectSelectorOpen ||
-    !isExitControlCode(event.code)
-  ) {
+  if (!projectSelectorHoldAllowed() || !isExitControlCode(event.code)) {
     return false;
   }
 
@@ -1978,13 +2161,30 @@ function startProjectSelectorHold(event) {
   if (event.repeat || projectSelectorHoldTimer) return true;
 
   projectSelectorHoldCode = event.code;
-  projectSelectorHoldTimer = window.setTimeout(() => {
-    projectSelectorSuppressExitCode = projectSelectorHoldCode;
-    projectSelectorHoldTimer = null;
-    projectSelectorHoldCode = null;
-    openProjectSelector();
-  }, PROJECT_SELECTOR_HOLD_MS);
+  projectSelectorHoldTimer = window.setTimeout(
+    () => openProjectSelectorFromHold(projectSelectorHoldCode),
+    PROJECT_SELECTOR_HOLD_MS,
+  );
   return true;
+}
+
+function updateProjectSelectorHold() {
+  const quitHeld =
+    inputManager.isHeld(0, INPUT_ACTIONS.BACK) ||
+    inputManager.isHeld(1, INPUT_ACTIONS.BACK);
+
+  if (!projectSelectorHoldAllowed() || !quitHeld) {
+    cancelProjectSelectorHold();
+    return;
+  }
+
+  if (!projectSelectorHoldTimer) {
+    projectSelectorHoldCode = null;
+    projectSelectorHoldTimer = window.setTimeout(
+      () => openProjectSelectorFromHold(),
+      PROJECT_SELECTOR_HOLD_MS,
+    );
+  }
 }
 
 function cancelProjectSelectorHold(code = null) {
@@ -2003,10 +2203,6 @@ function updateMaintenanceHold() {
   const bothStartsHeld =
     inputManager.isHeld(0, INPUT_ACTIONS.START) &&
     inputManager.isHeld(1, INPUT_ACTIONS.START);
-  const resetChordHeld =
-    bothStartsHeld &&
-    inputManager.isHeld(0, INPUT_ACTIONS.BACK) &&
-    inputManager.isHeld(1, INPUT_ACTIONS.BACK);
   const holdAllowed = ![
     "maintenance",
     "inputTest",
@@ -2014,17 +2210,6 @@ function updateMaintenanceHold() {
     "leaderboardResetConfirm",
     "leaderboardResetComplete",
   ].includes(state.phase);
-
-  if (resetChordHeld && holdAllowed) {
-    cancelMaintenanceHold();
-    if (!leaderboardResetHoldTimer) {
-      leaderboardResetHoldTimer = window.setTimeout(
-        openLeaderboardResetConfirmation,
-        MAINTENANCE_HOLD_MS,
-      );
-    }
-    return;
-  }
 
   cancelLeaderboardResetHold();
 
@@ -2136,38 +2321,20 @@ window.addEventListener("keydown", (event) => {
   }
 
   if (state.idleWarningOpen) {
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    if (
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowRight" ||
+      event.key === "ArrowUp" ||
+      event.key === "ArrowDown"
+    ) {
       event.preventDefault();
-      state.idleWarningActionIndex = state.idleWarningActionIndex === 0 ? 1 : 0;
-      render({ keepIdleTimer: true });
-      return;
-    }
-
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      state.idleWarningActionIndex = 0;
-      render({ keepIdleTimer: true });
-      return;
-    }
-
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      state.idleWarningActionIndex = 1;
-      render({ keepIdleTimer: true });
+      moveIdleWarningSelection(event.key);
       return;
     }
 
     if (isMenuSelectEvent(event)) {
       event.preventDefault();
-      if (state.idleWarningActionIndex === 0) {
-        closeIdleWarning();
-      } else {
-        stopIdleWarningCountdown();
-        state.idleWarningOpen = false;
-        state.idleWarningRemaining = IDLE_WARNING_SECONDS;
-        state.idleWarningActionIndex = 0;
-        returnToTitle();
-      }
+      activateIdleWarningSelection();
       return;
     }
 
@@ -2464,6 +2631,7 @@ window.addEventListener("touchstart", noteUserActivity, { passive: true });
 window.addEventListener("keyup", (event) => {
   inputManager.handleKeyUp(event);
   cancelProjectSelectorHold(event.code);
+  updateProjectSelectorHold();
   updateMaintenanceHold();
 });
 window.addEventListener("blur", () => {
@@ -2483,6 +2651,7 @@ inputManager.onAction((event) => {
   ) {
     return;
   }
+  updateProjectSelectorHold();
   updateMaintenanceHold();
   if (
     leaderboardResetHoldTimer &&
@@ -2493,7 +2662,10 @@ inputManager.onAction((event) => {
   handleInputAction(event);
 });
 
-window.setInterval(updateMaintenanceHold, 100);
+window.setInterval(() => {
+  updateProjectSelectorHold();
+  updateMaintenanceHold();
+}, 100);
 
 setRenderCallback(render);
 registerAudioCallbacks();

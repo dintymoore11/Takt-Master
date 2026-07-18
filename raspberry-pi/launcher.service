@@ -1,7 +1,7 @@
 [Unit]
 Description=Takt Builder arcade launcher
-After=graphical.target local-fs.target udisks2.service
-Wants=graphical.target
+After=display-manager.service graphical.target local-fs.target udisks2.service
+Wants=display-manager.service graphical.target
 
 [Service]
 Type=simple

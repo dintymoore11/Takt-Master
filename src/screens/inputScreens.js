@@ -11,6 +11,7 @@ export function maintenanceView(selectedIndex = 0) {
           <button class="${selectedIndex === 1 ? "selected-menu-action" : ""}" type="button" data-maintenance-input-test>Input Tester</button>
           <button class="${selectedIndex === 2 ? "selected-menu-action" : ""}" type="button" data-maintenance-configure>Configure Controls</button>
           <button class="${selectedIndex === 3 ? "selected-menu-action" : ""}" type="button" data-maintenance-reset>Reset Controls</button>
+          <button class="${selectedIndex === 4 ? "selected-menu-action" : ""}" type="button" data-maintenance-reset-leaderboard>Reset Leaderboard</button>
         </div>
       </section>
     </main>
@@ -95,10 +96,10 @@ export function mapperView(session) {
                 ${playerTitle} step ${PLAYER_ACTION_SEQUENCE.length} of ${PLAYER_ACTION_SEQUENCE.length}
               </div>
               <div class="mapper-actions">
-                <button class="${session.menuIndex === 0 ? "selected-menu-action" : ""}" type="button" data-mapper-save-player>Save ${playerTitle}</button>
                 ${session.playerIndex + 1 < PLAYER_COUNT
-                  ? `<button class="${session.menuIndex === 1 ? "selected-menu-action" : ""}" type="button" data-mapper-next-player>Save and Configure Player ${session.playerIndex + 2}</button>`
-                  : `<button class="${session.menuIndex === 1 ? "selected-menu-action" : ""}" type="button" data-mapper-finish>Save and Exit</button>`}
+                  ? `<button class="${session.menuIndex === 0 ? "selected-menu-action" : ""}" type="button" data-mapper-next-player>Save and Configure Player ${session.playerIndex + 2}</button>`
+                  : `<button class="${session.menuIndex === 0 ? "selected-menu-action" : ""}" type="button" data-mapper-finish>Save and Exit</button>`}
+                <button class="${session.menuIndex === 1 ? "selected-menu-action" : ""}" type="button" data-mapper-save-player>Save ${playerTitle} Only</button>
                 <button class="${session.menuIndex === 2 ? "selected-menu-action" : ""}" type="button" data-mapper-back>Back</button>
                 <button class="${session.menuIndex === 3 ? "selected-menu-action" : ""}" type="button" data-mapper-reset>Reset to Defaults</button>
               </div>

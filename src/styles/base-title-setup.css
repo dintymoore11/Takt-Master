@@ -1220,17 +1220,19 @@ button {
 }
 
 .title-leaderboard-labels {
-  grid-template-columns: 56px minmax(0, 1fr) minmax(92px, auto) minmax(126px, auto);
+  grid-template-columns: 56px minmax(0, 1fr) minmax(112px, auto) minmax(148px, auto);
+  gap: 10px;
   padding: 0 10px 8px;
   border-bottom: 1px solid rgba(164, 194, 215, 0.22);
   color: #fff;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .title-leaderboard-labels span {
   display: block;
+  white-space: nowrap;
 }
 
 .title-leaderboard-labels span:last-child {
@@ -1977,6 +1979,29 @@ h2 {
   box-shadow: 0 6px 14px rgba(47, 138, 75, 0.16);
 }
 
+.setup-mode-grid .mode-button.confirming {
+  animation: setup-mode-confirm 0.45s ease-out both;
+  border-color: #f4c430;
+  background:
+    linear-gradient(135deg, rgba(244, 196, 48, 0.34), rgba(255, 255, 255, 0.82) 58%),
+    rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 0 0 5px rgba(244, 196, 48, 0.24),
+    0 10px 22px rgba(47, 138, 75, 0.2);
+}
+
+@keyframes setup-mode-confirm {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.035);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 .setup-mode-grid .mode-button.selected .mode-key {
   color: #fff;
   background: var(--setup-accent);
@@ -2264,14 +2289,14 @@ h2 {
 
 .title-screen .title-board.leaderboard > .title-leaderboard-labels {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) minmax(64px, auto) minmax(112px, auto);
-  gap: 14px;
+  grid-template-columns: 46px minmax(0, 1fr) minmax(92px, auto) minmax(132px, auto);
+  gap: 10px;
   color: #f4c95d;
 }
 
 .title-screen .title-leaderboard-labels span {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
   line-height: 1;
 }
@@ -2300,7 +2325,7 @@ h2 {
 .title-screen .title-leaderboard-labels span:nth-child(3)::after {
   content: "Projects";
   color: #f4c95d;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .title-screen .title-leaderboard-labels span:last-child {
@@ -2310,8 +2335,8 @@ h2 {
 
 .title-screen .title-board.leaderboard > div:not(.title-board-heading):not(.title-leaderboard-labels),
 .title-screen .title-board.leaderboard > div:not(.title-board-heading):not(.title-leaderboard-labels):first-of-type {
-  grid-template-columns: 42px minmax(0, 1fr) minmax(64px, auto) minmax(112px, auto);
-  gap: 14px;
+  grid-template-columns: 46px minmax(0, 1fr) minmax(92px, auto) minmax(132px, auto);
+  gap: 10px;
   background: rgba(5, 30, 50, 0.2);
   color: #edf7fe;
 }

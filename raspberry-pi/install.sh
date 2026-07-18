@@ -31,11 +31,21 @@ if ! command -v python3 >/dev/null 2>&1 || {
   fi
 fi
 
-sudo mkdir -p "${INSTALL_DIR}" "${GAME_DIR}" "${PROFILE_DIR}" "${DATA_DIR}"
+sudo mkdir -p "${INSTALL_DIR}" "${GAME_DIR}" "${PROFILE_DIR}" "${DATA_DIR}" "${PI_HOME}/.config/autostart"
 sudo cp "${SCRIPT_DIR}/launcher.sh" "${INSTALL_DIR}/launcher.sh"
 sudo cp "${SCRIPT_DIR}/update.sh" "${INSTALL_DIR}/update.sh"
 sudo chmod +x "${INSTALL_DIR}/launcher.sh" "${INSTALL_DIR}/update.sh"
-sudo chown -R "${PI_USER}:${PI_USER}" "${INSTALL_DIR}" "${GAME_DIR}" "${PROFILE_DIR}" "${DATA_DIR}"
+sudo tee "${PI_HOME}/.config/autostart/takt-builder.desktop" >/dev/null <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=Takt Builder
+Comment=Launch Takt Builder arcade kiosk
+Exec=${INSTALL_DIR}/launcher.sh
+Terminal=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=2
+DESKTOP
+sudo chown -R "${PI_USER}:${PI_USER}" "${INSTALL_DIR}" "${GAME_DIR}" "${PROFILE_DIR}" "${DATA_DIR}" "${PI_HOME}/.config"
 
 if [ -d "${SCRIPT_DIR}/../dist" ] && [ -f "${SCRIPT_DIR}/../dist/index.html" ]; then
   echo "Installing current local dist build..."
@@ -65,7 +75,10 @@ fi
 
 sudo cp "${SCRIPT_DIR}/${SERVICE_NAME}" "/etc/systemd/system/${SERVICE_NAME}"
 sudo systemctl daemon-reload
-sudo systemctl enable "${SERVICE_NAME}"
+sudo systemctl disable --now "${SERVICE_NAME}" >/dev/null 2>&1 || true
+sudo pkill -f -- "--user-data-dir=${PROFILE_DIR}" >/dev/null 2>&1 || true
+sudo pkill -f -- "python3 -m http.server 8080 --bind 127.0.0.1" >/dev/null 2>&1 || true
+sudo rm -f "${DATA_DIR}/server.pid" "${DATA_DIR}/chromium.pid"
 
-echo "Installation complete."
-echo "Reboot the Pi. Future updates only need: npm run build, copy dist to USB, insert USB, reboot."
+echo "Installation complete. Any currently running kiosk browser was closed. The desktop autostart launcher will run on the next reboot."
+echo "Reboot the Pi when you are ready. Future updates only need: npm run build, copy dist to USB, insert USB, reboot."
