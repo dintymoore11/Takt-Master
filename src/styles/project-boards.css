@@ -2751,6 +2751,28 @@
     drop-shadow(0 0 12px var(--trade-color));
 }
 
+.project-industrial-plant .sprite-worker .hardhat {
+  display: block;
+  left: 14%;
+  top: 2%;
+  z-index: 3;
+  width: 25%;
+  height: 9%;
+  border-width: 1px;
+  border-radius: 999px 999px 3px 3px;
+  background: var(--trade-color);
+  box-shadow: inset 0 2px rgba(255, 255, 255, 0.48);
+}
+
+.project-industrial-plant .sprite-worker .hardhat::after {
+  left: -16%;
+  right: -16%;
+  bottom: -35%;
+  height: 34%;
+  border-width: 1px;
+  background: var(--trade-color);
+}
+
 .project-industrial-plant .worker .trade-die {
   right: -22px;
   top: -30px;

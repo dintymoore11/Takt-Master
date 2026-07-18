@@ -617,6 +617,11 @@ export function projectDayPace() {
   return Number.isFinite(pace) && pace > 0 ? pace : 1;
 }
 
+function projectCostPace() {
+  const pace = currentProject().costPaceMultiplier ?? projectDayPace();
+  return Number.isFinite(pace) && pace > 0 ? pace : 1;
+}
+
 export function projectDay(day = state.day) {
   return Math.round(day * (projectDuration() / gameplayDuration()) * projectDayPace());
 }
@@ -631,7 +636,7 @@ export function scaledLaborCost(baseCost, moraleMultiplier = 1) {
     baseCost *
       moraleMultiplier *
       laborMultiplier *
-      projectDayPace() *
+      projectCostPace() *
       projectCostScale(),
   );
 }
