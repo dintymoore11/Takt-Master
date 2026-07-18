@@ -13,8 +13,15 @@ import {
   NAME_ACTIONS,
 } from "./gameConfig.js";
 import { createInitialState, createTradeState } from "./gameState.js";
+import {
+  LEADERBOARD_STORAGE_KEY,
+  loadLeaderboard,
+  resetLeaderboard,
+  saveLeaderboardRows,
+} from "./ui/leaderboardStorage.js";
 
 const LEADERBOARD_LIMIT = 20;
+export { LEADERBOARD_STORAGE_KEY, loadLeaderboard, resetLeaderboard };
 export const MAX_LEADERBOARD_NAME_LENGTH = 30;
 export const FINAL_CAMPAIGN_LEVEL = 10;
 const PUSH_COST_MARKUP = 1.12;
@@ -1153,14 +1160,6 @@ export function completedProjectTotal() {
   return Math.max(0, completedThrough - startedAt + 1);
 }
 
-export function loadLeaderboard() {
-  try {
-    return JSON.parse(localStorage.getItem("taktTowersLeaderboard") ?? "[]");
-  } catch {
-    return [];
-  }
-}
-
 export function saveLeaderboardScore() {
   if (state.scoreSaved) return;
   if (!leaderboardQualifies(state.totalProfit)) {
@@ -1186,7 +1185,7 @@ export function saveLeaderboardScore() {
     .sort((a, b) => b.earnings - a.earnings)
     .slice(0, LEADERBOARD_LIMIT);
 
-  localStorage.setItem("taktTowersLeaderboard", JSON.stringify(rows));
+  saveLeaderboardRows(rows);
   state.scoreName = name;
   state.scoreSaved = true;
   returnToTitle();

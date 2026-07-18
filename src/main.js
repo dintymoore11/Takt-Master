@@ -27,6 +27,24 @@ import {
 } from "./screens/leaderboardEntryScreen.js";
 import { winView } from "./screens/taktLegendScreen.js";
 import { titleView } from "./screens/titleScreen.js";
+import { INPUT_ACTIONS, PLAYER_ACTION_SEQUENCE } from "./input/actions.js";
+import { InputManager } from "./input/inputManager.js";
+import {
+  defaultControllerMappings,
+  saveControllerMappings,
+} from "./input/controllerStorage.js";
+import {
+  detectMappingInput,
+  isDirectionAction,
+  joystickNeutral,
+} from "./input/mappingCapture.js";
+import {
+  inputTesterView,
+  leaderboardResetCompleteView,
+  leaderboardResetConfirmView,
+  maintenanceView,
+  mapperView,
+} from "./screens/inputScreens.js";
 import {
   addLog,
   activeTradeCount,
@@ -55,6 +73,7 @@ import {
   resolvePlayerRoadblock,
   resolveSelectedRoadblock,
   restartAfterLeaderboard,
+  resetLeaderboard,
   resetProject,
   returnToTitle,
   saveLeaderboardScore,
@@ -84,6 +103,7 @@ import {
 const IDLE_RETURN_MS = 90_000;
 const IDLE_WARNING_SECONDS = 30;
 const PROJECT_SELECTOR_HOLD_MS = 3_000;
+const MAINTENANCE_HOLD_MS = 5_000;
 const MENU_SELECT_CODES = new Set([
   "Space",
   "KeyF",
@@ -93,44 +113,21 @@ const MENU_SELECT_CODES = new Set([
   "KeyK",
   "KeyL",
 ]);
-const ARCADE_PLAYERS = [
-  {
-    index: 0,
-    start: ["Digit1"],
-    exit: ["Escape"],
-    directions: {
-      ArrowUp: "ArrowUp",
-      ArrowDown: "ArrowDown",
-      ArrowLeft: "ArrowLeft",
-      ArrowRight: "ArrowRight",
-    },
-    modes: ["KeyI", "KeyO", "KeyP"],
-    resolve: ["KeyJ", "Space"],
-    identify: ["KeyK"],
-    push: ["KeyL"],
-  },
-  {
-    index: 1,
-    start: ["Digit2"],
-    exit: ["Backspace"],
-    directions: {
-      KeyW: "ArrowUp",
-      KeyS: "ArrowDown",
-      KeyA: "ArrowLeft",
-      KeyD: "ArrowRight",
-    },
-    modes: ["KeyE", "KeyR", "KeyT"],
-    resolve: ["KeyF"],
-    identify: ["KeyG"],
-    push: ["KeyH"],
-  },
-];
 const app = document.querySelector("#app");
+const inputManager = new InputManager();
 let idleReturnTimer = null;
 let idleWarningTickTimer = null;
 let projectSelectorHoldTimer = null;
 let projectSelectorHoldCode = null;
 let projectSelectorSuppressExitCode = null;
+let maintenanceHoldTimer = null;
+let leaderboardResetHoldTimer = null;
+let previousPhaseBeforeMaintenance = "title";
+let maintenanceMenuIndex = 0;
+let leaderboardResetMenuIndex = 1;
+let inputTesterRaf = null;
+let mapperRaf = null;
+let mapperSession = null;
 
 const GAME_TITLE = "Takt Builder";
 
@@ -172,6 +169,26 @@ function confirmQuitGame() {
   state.quitConfirm = false;
   state.endActionIndex = 0;
   returnToTitle();
+}
+
+function moveQuitConfirmationSelection(direction) {
+  if (direction === "ArrowLeft" || direction === "ArrowUp") {
+    state.endActionIndex = 0;
+  } else if (direction === "ArrowRight" || direction === "ArrowDown") {
+    state.endActionIndex = 1;
+  } else {
+    return false;
+  }
+  render({ keepIdleTimer: true });
+  return true;
+}
+
+function activateQuitConfirmationSelection() {
+  if (state.endActionIndex === 0) {
+    closeQuitConfirmation();
+  } else {
+    confirmQuitGame();
+  }
 }
 
 function openIdleWarning() {
@@ -224,6 +241,41 @@ function stopIdleWarningCountdown() {
 function render({ keepIdleTimer = false } = {}) {
   if (!keepIdleTimer) scheduleIdleReturn();
   syncGameAudio();
+
+  stopInputTesterLoop();
+  stopMapperLoop();
+
+  if (state.phase === "maintenance") {
+    app.innerHTML = maintenanceView(maintenanceMenuIndex);
+    bindMaintenance();
+    return;
+  }
+
+  if (state.phase === "leaderboardResetConfirm") {
+    app.innerHTML = leaderboardResetConfirmView(leaderboardResetMenuIndex);
+    bindLeaderboardResetConfirm();
+    return;
+  }
+
+  if (state.phase === "leaderboardResetComplete") {
+    app.innerHTML = leaderboardResetCompleteView();
+    bindLeaderboardResetComplete();
+    return;
+  }
+
+  if (state.phase === "inputTest") {
+    app.innerHTML = inputTesterView(inputManager.snapshot());
+    bindInputTester();
+    startInputTesterLoop();
+    return;
+  }
+
+  if (state.phase === "controlMapper") {
+    app.innerHTML = mapperView(mapperSession);
+    bindMapper();
+    startMapperLoop();
+    return;
+  }
 
   if (state.phase === "title") {
     app.innerHTML = withIdleWarning(titleView());
@@ -1250,6 +1302,76 @@ function bindWin() {
     });
 }
 
+function bindMaintenance() {
+  document
+    .querySelector("[data-maintenance-resume]")
+    ?.addEventListener("click", closeMaintenance);
+  document
+    .querySelector("[data-maintenance-input-test]")
+    ?.addEventListener("click", openInputTester);
+  document
+    .querySelector("[data-maintenance-configure]")
+    ?.addEventListener("click", openControlMapper);
+  document
+    .querySelector("[data-maintenance-reset]")
+    ?.addEventListener("click", () => {
+      inputManager.resetMappings();
+      closeMaintenance();
+    });
+}
+
+function bindLeaderboardResetConfirm() {
+  document
+    .querySelector("[data-leaderboard-reset-confirm]")
+    ?.addEventListener("click", confirmLeaderboardReset);
+  document
+    .querySelector("[data-leaderboard-reset-cancel]")
+    ?.addEventListener("click", closeLeaderboardResetConfirmation);
+}
+
+function bindLeaderboardResetComplete() {
+  document
+    .querySelector("[data-leaderboard-reset-done]")
+    ?.addEventListener("click", openMaintenance);
+}
+
+function bindInputTester() {
+  document
+    .querySelector("[data-input-back]")
+    ?.addEventListener("click", openMaintenance);
+}
+
+function bindMapper() {
+  document
+    .querySelector("[data-mapper-cancel]")
+    ?.addEventListener("click", openMaintenance);
+  document
+    .querySelector("[data-mapper-confirm]")
+    ?.addEventListener("click", openMaintenance);
+  document
+    .querySelector("[data-mapper-reset]")
+    ?.addEventListener("click", () => {
+      inputManager.resetMappings();
+      mapperSession = createMapperSession();
+      render({ keepIdleTimer: true });
+    });
+  document
+    .querySelector("[data-mapper-save-player]")
+    ?.addEventListener("click", saveMapperPlayer);
+  document
+    .querySelector("[data-mapper-next-player]")
+    ?.addEventListener("click", saveMapperPlayerAndContinue);
+  document
+    .querySelector("[data-mapper-finish]")
+    ?.addEventListener("click", finishMapper);
+  document
+    .querySelector("[data-mapper-back]")
+    ?.addEventListener("click", mapperBack);
+  document
+    .querySelector("[data-mapper-retry]")
+    ?.addEventListener("click", mapperRetry);
+}
+
 function bindGame() {
   document.querySelectorAll("[data-zone]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1278,6 +1400,301 @@ function bindGame() {
 
 }
 
+function openMaintenance() {
+  if (
+    state.phase !== "maintenance" &&
+    state.phase !== "inputTest" &&
+    state.phase !== "controlMapper" &&
+    state.phase !== "leaderboardResetConfirm" &&
+    state.phase !== "leaderboardResetComplete"
+  ) {
+    previousPhaseBeforeMaintenance = state.phase;
+  }
+  cancelMaintenanceHold();
+  cancelLeaderboardResetHold();
+  maintenanceMenuIndex = 0;
+  state.phase = "maintenance";
+  render({ keepIdleTimer: true });
+}
+
+function closeMaintenance() {
+  state.phase = previousPhaseBeforeMaintenance || "title";
+  render({ keepIdleTimer: true });
+}
+
+function openInputTester() {
+  state.phase = "inputTest";
+  render({ keepIdleTimer: true });
+}
+
+function openControlMapper() {
+  mapperSession = createMapperSession();
+  state.phase = "controlMapper";
+  render({ keepIdleTimer: true });
+}
+
+function openLeaderboardResetConfirmation() {
+  previousPhaseBeforeMaintenance = state.phase;
+  cancelMaintenanceHold();
+  cancelLeaderboardResetHold();
+  leaderboardResetMenuIndex = 1;
+  state.phase = "leaderboardResetConfirm";
+  render({ keepIdleTimer: true });
+}
+
+function closeLeaderboardResetConfirmation() {
+  openMaintenance();
+}
+
+function confirmLeaderboardReset() {
+  resetLeaderboard();
+  state.phase = "leaderboardResetComplete";
+  render({ keepIdleTimer: true });
+}
+
+function moveMenuIndex(currentIndex, direction, itemCount) {
+  if (direction !== "ArrowUp" && direction !== "ArrowDown") return currentIndex;
+  const offset = direction === "ArrowUp" ? -1 : 1;
+  return (currentIndex + offset + itemCount) % itemCount;
+}
+
+function activateMaintenanceMenu() {
+  if (maintenanceMenuIndex === 0) {
+    closeMaintenance();
+  } else if (maintenanceMenuIndex === 1) {
+    openInputTester();
+  } else if (maintenanceMenuIndex === 2) {
+    openControlMapper();
+  } else if (maintenanceMenuIndex === 3) {
+    inputManager.resetMappings();
+    closeMaintenance();
+  }
+}
+
+function activateLeaderboardResetMenu() {
+  if (leaderboardResetMenuIndex === 0) {
+    confirmLeaderboardReset();
+  } else {
+    closeLeaderboardResetConfirmation();
+  }
+}
+
+function startInputTesterLoop() {
+  const tick = () => {
+    if (state.phase !== "inputTest") return;
+    app.innerHTML = inputTesterView(inputManager.snapshot());
+    bindInputTester();
+    inputTesterRaf = window.requestAnimationFrame(tick);
+  };
+  inputTesterRaf = window.requestAnimationFrame(tick);
+}
+
+function stopInputTesterLoop() {
+  if (!inputTesterRaf) return;
+  window.cancelAnimationFrame(inputTesterRaf);
+  inputTesterRaf = null;
+}
+
+function createMapperSession() {
+  const mappings = cloneMappings(inputManager.mappings || defaultControllerMappings());
+  return {
+    mappings,
+    playerIndex: 0,
+    stepIndex: 0,
+    action: PLAYER_ACTION_SEQUENCE[0],
+    waitingForNeutral: isDirectionAction(PLAYER_ACTION_SEQUENCE[0]),
+    usedButtons: [new Set(), new Set()],
+    menuIndex: 0,
+    playerComplete: false,
+    complete: false,
+  };
+}
+
+function cloneMappings(mappings) {
+  return JSON.parse(JSON.stringify(mappings));
+}
+
+function startMapperLoop() {
+  const tick = () => {
+    if (
+      state.phase !== "controlMapper" ||
+      !mapperSession ||
+      mapperSession.complete ||
+      mapperSession.playerComplete
+    ) {
+      return;
+    }
+    if (captureMapperStep()) return;
+    mapperRaf = window.requestAnimationFrame(tick);
+  };
+  mapperRaf = window.requestAnimationFrame(tick);
+}
+
+function stopMapperLoop() {
+  if (!mapperRaf) return;
+  window.cancelAnimationFrame(mapperRaf);
+  mapperRaf = null;
+}
+
+function mapperGamepad() {
+  const gamepads = inputManager.snapshot();
+  return gamepads[mapperSession.playerIndex] || null;
+}
+
+function captureMapperStep() {
+  if (mapperSession.playerComplete) return false;
+  const gamepad = mapperGamepad();
+  if (!gamepad) return false;
+  const liveGamepad = Array.from(navigator.getGamepads?.() || []).find(
+    (item) => item && item.index === gamepad.index,
+  );
+  if (!liveGamepad) return false;
+
+  if (mapperSession.waitingForNeutral) {
+    if (joystickNeutral(liveGamepad)) {
+      mapperSession.waitingForNeutral = false;
+      render({ keepIdleTimer: true });
+      return true;
+    }
+    return false;
+  }
+
+  const binding = detectMappingInput(
+    liveGamepad,
+    mapperSession.action,
+    mapperSession.usedButtons[mapperSession.playerIndex],
+  );
+  if (!binding) return false;
+
+  mapperSession.mappings.players[mapperSession.playerIndex].gamepadId = liveGamepad.id;
+  mapperSession.mappings.players[mapperSession.playerIndex].gamepadIndex = liveGamepad.index;
+  mapperSession.mappings.players[mapperSession.playerIndex].actions[mapperSession.action] = binding;
+  if (binding.type === "button") {
+    mapperSession.usedButtons[mapperSession.playerIndex].add(binding.button);
+  }
+  advanceMapperStep();
+  return true;
+}
+
+function advanceMapperStep() {
+  mapperSession.stepIndex += 1;
+  if (mapperSession.stepIndex >= PLAYER_ACTION_SEQUENCE.length) {
+    mapperSession.stepIndex = 0;
+    mapperSession.playerComplete = true;
+    mapperSession.menuIndex = 0;
+    render({ keepIdleTimer: true });
+    return;
+  }
+
+  mapperSession.action = PLAYER_ACTION_SEQUENCE[mapperSession.stepIndex];
+  mapperSession.waitingForNeutral = isDirectionAction(mapperSession.action);
+  render({ keepIdleTimer: true });
+}
+
+function mapperBack() {
+  if (!mapperSession || mapperSession.complete) return;
+  if (mapperSession.playerComplete) {
+    mapperSession.playerComplete = false;
+    mapperSession.stepIndex = PLAYER_ACTION_SEQUENCE.length - 1;
+    mapperSession.action = PLAYER_ACTION_SEQUENCE[mapperSession.stepIndex];
+    mapperSession.waitingForNeutral = false;
+    render({ keepIdleTimer: true });
+    return;
+  }
+  if (mapperSession.stepIndex > 0) {
+    mapperSession.stepIndex -= 1;
+  } else if (mapperSession.playerIndex > 0) {
+    mapperSession.playerIndex -= 1;
+    mapperSession.stepIndex = PLAYER_ACTION_SEQUENCE.length - 1;
+  }
+  mapperSession.action = PLAYER_ACTION_SEQUENCE[mapperSession.stepIndex];
+  mapperSession.waitingForNeutral = isDirectionAction(mapperSession.action);
+  render({ keepIdleTimer: true });
+}
+
+function mapperRetry() {
+  if (!mapperSession || mapperSession.complete) return;
+  mapperSession.waitingForNeutral = isDirectionAction(mapperSession.action);
+  render({ keepIdleTimer: true });
+}
+
+function saveMapperPlayer() {
+  if (!mapperSession) return;
+  saveControllerMappings(mapperSession.mappings);
+  inputManager.updateMappings(mapperSession.mappings);
+  openMaintenance();
+}
+
+function saveMapperPlayerAndContinue() {
+  if (!mapperSession) return;
+  saveControllerMappings(mapperSession.mappings);
+  inputManager.updateMappings(mapperSession.mappings);
+  mapperSession.playerIndex = Math.min(
+    mapperSession.playerIndex + 1,
+    mapperSession.mappings.players.length - 1,
+  );
+  mapperSession.stepIndex = 0;
+  mapperSession.action = PLAYER_ACTION_SEQUENCE[0];
+  mapperSession.waitingForNeutral = isDirectionAction(mapperSession.action);
+  mapperSession.menuIndex = 0;
+  mapperSession.playerComplete = false;
+  render({ keepIdleTimer: true });
+}
+
+function finishMapper() {
+  if (!mapperSession) return;
+  saveControllerMappings(mapperSession.mappings);
+  inputManager.updateMappings(mapperSession.mappings);
+  openMaintenance();
+}
+
+function mapperMenuActionCount() {
+  if (!mapperSession) return 0;
+  if (mapperSession.complete) return 2;
+  if (mapperSession.playerComplete) return 4;
+  return 0;
+}
+
+function moveMapperMenu(direction) {
+  const count = mapperMenuActionCount();
+  if (!count) return false;
+  mapperSession.menuIndex = moveMenuIndex(mapperSession.menuIndex ?? 0, direction, count);
+  render({ keepIdleTimer: true });
+  return true;
+}
+
+function activateMapperMenu() {
+  if (!mapperSession) return false;
+  if (mapperSession.complete) {
+    if ((mapperSession.menuIndex ?? 0) === 0) openMaintenance();
+    else {
+      inputManager.resetMappings();
+      mapperSession = createMapperSession();
+      render({ keepIdleTimer: true });
+    }
+    return true;
+  }
+
+  if (!mapperSession.playerComplete) return false;
+
+  if (mapperSession.menuIndex === 0) {
+    saveMapperPlayer();
+  } else if (mapperSession.menuIndex === 1) {
+    if (mapperSession.playerIndex + 1 < mapperSession.mappings.players.length) {
+      saveMapperPlayerAndContinue();
+    } else {
+      finishMapper();
+    }
+  } else if (mapperSession.menuIndex === 2) {
+    mapperBack();
+  } else {
+    inputManager.resetMappings();
+    mapperSession = createMapperSession();
+    render({ keepIdleTimer: true });
+  }
+  return true;
+}
+
 function finishCareer() {
   if (!leaderboardQualifies(state.totalProfit)) {
     returnToTitle();
@@ -1295,29 +1712,6 @@ function restartEndProject() {
   }
 
   startNextProject();
-}
-
-function arcadeControlForEvent(event) {
-  return ARCADE_PLAYERS.find((player) => {
-    const codes = [
-      ...player.start,
-      ...player.exit,
-      ...Object.keys(player.directions),
-      ...player.modes,
-      ...player.resolve,
-      ...player.identify,
-      ...player.push,
-    ];
-    return codes.includes(event.code);
-  });
-}
-
-function arcadeModeIndexForEvent(control, event) {
-  return control.modes.findIndex((code) => code === event.code);
-}
-
-function arcadeDirectionForEvent(control, event) {
-  return control.directions[event.code];
 }
 
 function zoneForDirection(zone, direction) {
@@ -1362,18 +1756,115 @@ function zoneForDirection(zone, direction) {
   return zone;
 }
 
-function handleArcadeControl(event) {
+function directionForAction(action) {
+  if (action === INPUT_ACTIONS.UP) return "ArrowUp";
+  if (action === INPUT_ACTIONS.DOWN) return "ArrowDown";
+  if (action === INPUT_ACTIONS.LEFT) return "ArrowLeft";
+  if (action === INPUT_ACTIONS.RIGHT) return "ArrowRight";
+  return null;
+}
+
+function modeIndexForAction(action) {
+  return [
+    INPUT_ACTIONS.LOW_VARIABILITY,
+    INPUT_ACTIONS.MEDIUM_VARIABILITY,
+    INPUT_ACTIONS.HIGH_VARIABILITY,
+  ].indexOf(action);
+}
+
+function handleInputAction({ playerIndex, action, preventDefault = () => {} }) {
+  const direction = directionForAction(action);
+
+  if (state.quitConfirm) {
+    preventDefault();
+    if (direction) {
+      moveQuitConfirmationSelection(direction);
+    } else {
+      activateQuitConfirmationSelection();
+    }
+    return true;
+  }
+
+  if (state.phase === "maintenance") {
+    if (direction) {
+      preventDefault();
+      maintenanceMenuIndex = moveMenuIndex(maintenanceMenuIndex, direction, 4);
+      render({ keepIdleTimer: true });
+      return true;
+    }
+    if (action === INPUT_ACTIONS.START) {
+      preventDefault();
+      activateMaintenanceMenu();
+      return true;
+    }
+    if (action === INPUT_ACTIONS.BACK) {
+      preventDefault();
+      closeMaintenance();
+      return true;
+    }
+    return false;
+  }
+
+  if (state.phase === "inputTest") {
+    if (action === INPUT_ACTIONS.BACK || action === INPUT_ACTIONS.START) {
+      preventDefault();
+      openMaintenance();
+      return true;
+    }
+    return false;
+  }
+
+  if (state.phase === "controlMapper") {
+    if (direction && moveMapperMenu(direction)) {
+      preventDefault();
+      return true;
+    }
+    if (action === INPUT_ACTIONS.START && activateMapperMenu()) {
+      preventDefault();
+      return true;
+    }
+    if (action === INPUT_ACTIONS.BACK) {
+      preventDefault();
+      if (mapperSession?.complete) openMaintenance();
+      else mapperBack();
+      return true;
+    }
+    return false;
+  }
+
+  if (state.phase === "leaderboardResetConfirm") {
+    preventDefault();
+    if (direction) {
+      leaderboardResetMenuIndex = moveMenuIndex(leaderboardResetMenuIndex, direction, 2);
+      render({ keepIdleTimer: true });
+      return true;
+    }
+    if (action === INPUT_ACTIONS.START) {
+      activateLeaderboardResetMenu();
+      return true;
+    }
+    if (action === INPUT_ACTIONS.BACK) {
+      closeLeaderboardResetConfirmation();
+      return true;
+    }
+    return false;
+  }
+
+  if (state.phase === "leaderboardResetComplete") {
+    preventDefault();
+    if (action === INPUT_ACTIONS.START || action === INPUT_ACTIONS.BACK) {
+      openMaintenance();
+      return true;
+    }
+    return false;
+  }
+
   if (state.phase === "nameEntry") return false;
 
-  const control = arcadeControlForEvent(event);
-  if (!control) return false;
+  const modeIndex = modeIndexForAction(action);
 
-  const playerIndex = control.index;
-  const direction = arcadeDirectionForEvent(control, event);
-  const modeIndex = arcadeModeIndexForEvent(control, event);
-
-  if (control.start.includes(event.code)) {
-    event.preventDefault();
+  if (action === INPUT_ACTIONS.START) {
+    preventDefault();
     if (state.phase === "title" && state.projectSelectorOpen) {
       activateProjectSelectorControl();
       return true;
@@ -1386,12 +1877,12 @@ function handleArcadeControl(event) {
     return true;
   }
 
-  if (control.exit.includes(event.code)) {
-    event.preventDefault();
+  if (action === INPUT_ACTIONS.BACK) {
+    preventDefault();
     if (
       state.phase === "title" &&
       state.projectSelectorOpen &&
-      projectSelectorSuppressExitCode === event.code
+      projectSelectorSuppressExitCode
     ) {
       return true;
     }
@@ -1406,21 +1897,21 @@ function handleArcadeControl(event) {
   }
 
   if (state.phase === "title" && state.projectSelectorOpen && direction) {
-    event.preventDefault();
+    preventDefault();
     moveProjectSelector(direction);
     render();
     return true;
   }
 
   if (state.phase === "setup" && modeIndex >= 0) {
-    event.preventDefault();
+    preventDefault();
     state.setupModeIndex = modeIndex;
     startSetupProject(modeIndex);
     return true;
   }
 
   if (state.phase === "setup" && direction) {
-    event.preventDefault();
+    preventDefault();
     if (direction === "ArrowLeft" || direction === "ArrowUp") {
       selectSetupMode(setupModeIndex() - 1);
     } else {
@@ -1437,27 +1928,27 @@ function handleArcadeControl(event) {
   }
 
   if (direction) {
-    event.preventDefault();
+    preventDefault();
     const currentZone = state.players[playerIndex].selectedZone;
     setPlayerSelectedZone(playerIndex, zoneForDirection(currentZone, direction));
     render();
     return true;
   }
 
-  if (control.resolve.includes(event.code)) {
-    event.preventDefault();
+  if (action === INPUT_ACTIONS.REMOVE_ROADBLOCK) {
+    preventDefault();
     resolvePlayerRoadblock(playerIndex);
     return true;
   }
 
-  if (control.identify.includes(event.code)) {
-    event.preventDefault();
+  if (action === INPUT_ACTIONS.IDENTIFY_ROADBLOCKS) {
+    preventDefault();
     identifyPlayerRoadblocks(playerIndex);
     return true;
   }
 
-  if (control.push.includes(event.code)) {
-    event.preventDefault();
+  if (action === INPUT_ACTIONS.PUSH_TRADE) {
+    preventDefault();
     pushPlayerTrade(playerIndex);
     return true;
   }
@@ -1466,7 +1957,8 @@ function handleArcadeControl(event) {
 }
 
 function isExitControlCode(code) {
-  return ARCADE_PLAYERS.some((player) => player.exit.includes(code));
+  const match = inputManager.keyboardActionForCode(code);
+  return match?.action === INPUT_ACTIONS.BACK;
 }
 
 function isMenuSelectEvent(event) {
@@ -1505,6 +1997,59 @@ function cancelProjectSelectorHold(code = null) {
   if (!code || code === projectSelectorSuppressExitCode) {
     projectSelectorSuppressExitCode = null;
   }
+}
+
+function updateMaintenanceHold() {
+  const bothStartsHeld =
+    inputManager.isHeld(0, INPUT_ACTIONS.START) &&
+    inputManager.isHeld(1, INPUT_ACTIONS.START);
+  const resetChordHeld =
+    bothStartsHeld &&
+    inputManager.isHeld(0, INPUT_ACTIONS.BACK) &&
+    inputManager.isHeld(1, INPUT_ACTIONS.BACK);
+  const holdAllowed = ![
+    "maintenance",
+    "inputTest",
+    "controlMapper",
+    "leaderboardResetConfirm",
+    "leaderboardResetComplete",
+  ].includes(state.phase);
+
+  if (resetChordHeld && holdAllowed) {
+    cancelMaintenanceHold();
+    if (!leaderboardResetHoldTimer) {
+      leaderboardResetHoldTimer = window.setTimeout(
+        openLeaderboardResetConfirmation,
+        MAINTENANCE_HOLD_MS,
+      );
+    }
+    return;
+  }
+
+  cancelLeaderboardResetHold();
+
+  if (
+    bothStartsHeld &&
+    holdAllowed
+  ) {
+    if (!maintenanceHoldTimer) {
+      maintenanceHoldTimer = window.setTimeout(openMaintenance, MAINTENANCE_HOLD_MS);
+    }
+    return;
+  }
+  cancelMaintenanceHold();
+}
+
+function cancelMaintenanceHold() {
+  if (!maintenanceHoldTimer) return;
+  window.clearTimeout(maintenanceHoldTimer);
+  maintenanceHoldTimer = null;
+}
+
+function cancelLeaderboardResetHold() {
+  if (!leaderboardResetHoldTimer) return;
+  window.clearTimeout(leaderboardResetHoldTimer);
+  leaderboardResetHoldTimer = null;
 }
 
 function moveProjectSelector(direction) {
@@ -1575,6 +2120,17 @@ function activateProjectSelectorControl() {
 window.addEventListener("keydown", (event) => {
   noteUserActivity();
 
+  const arcadeKey = inputManager.keyboardActionForCode(event.code);
+  if (arcadeKey) inputManager.handleKeyDown(event, { emit: false });
+  updateMaintenanceHold();
+  if (
+    leaderboardResetHoldTimer &&
+    (arcadeKey?.action === INPUT_ACTIONS.START || arcadeKey?.action === INPUT_ACTIONS.BACK)
+  ) {
+    event.preventDefault();
+    return;
+  }
+
   if (startProjectSelectorHold(event)) {
     return;
   }
@@ -1625,41 +2181,35 @@ window.addEventListener("keydown", (event) => {
       return;
     }
 
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    if (
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowRight" ||
+      event.key === "ArrowUp" ||
+      event.key === "ArrowDown"
+    ) {
       event.preventDefault();
-      state.endActionIndex = state.endActionIndex === 0 ? 1 : 0;
-      render({ keepIdleTimer: true });
-      return;
-    }
-
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      state.endActionIndex = 0;
-      render({ keepIdleTimer: true });
-      return;
-    }
-
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      state.endActionIndex = 1;
-      render({ keepIdleTimer: true });
+      moveQuitConfirmationSelection(event.key);
       return;
     }
 
     if (isMenuSelectEvent(event)) {
       event.preventDefault();
-      if (state.endActionIndex === 0) {
-        closeQuitConfirmation();
-      } else {
-        confirmQuitGame();
-      }
+      activateQuitConfirmationSelection();
       return;
     }
 
     return;
   }
 
-  if (handleArcadeControl(event)) {
+  if (
+    arcadeKey &&
+    !event.repeat &&
+    handleInputAction({
+      ...arcadeKey,
+      source: "keyboard",
+      preventDefault: () => event.preventDefault(),
+    })
+  ) {
     return;
   }
 
@@ -1912,12 +2462,43 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("pointerdown", noteUserActivity);
 window.addEventListener("touchstart", noteUserActivity, { passive: true });
 window.addEventListener("keyup", (event) => {
+  inputManager.handleKeyUp(event);
   cancelProjectSelectorHold(event.code);
+  updateMaintenanceHold();
 });
 window.addEventListener("blur", () => {
   cancelProjectSelectorHold();
+  cancelMaintenanceHold();
+  cancelLeaderboardResetHold();
 });
+
+inputManager.start();
+inputManager.onAction((event) => {
+  if (event.source === "keyboard") return;
+  noteUserActivity();
+  if (
+    state.phase === "controlMapper" &&
+    !mapperSession?.playerComplete &&
+    !mapperSession?.complete
+  ) {
+    return;
+  }
+  updateMaintenanceHold();
+  if (
+    leaderboardResetHoldTimer &&
+    (event.action === INPUT_ACTIONS.START || event.action === INPUT_ACTIONS.BACK)
+  ) {
+    return;
+  }
+  handleInputAction(event);
+});
+
+window.setInterval(updateMaintenanceHold, 100);
 
 setRenderCallback(render);
 registerAudioCallbacks();
+if (new URLSearchParams(window.location.search).get("inputTest") === "true") {
+  previousPhaseBeforeMaintenance = "title";
+  state.phase = "inputTest";
+}
 render();

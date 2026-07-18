@@ -1,0 +1,20 @@
+[Unit]
+Description=Takt Builder arcade launcher
+After=graphical.target local-fs.target udisks2.service
+Wants=graphical.target
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+Environment=HOME=/home/admin
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/admin/.Xauthority
+WorkingDirectory=/home/admin/TaktBuilderLauncher
+ExecStart=/home/admin/TaktBuilderLauncher/launcher.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
+
