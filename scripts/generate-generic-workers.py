@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -9,7 +10,7 @@ from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT = ROOT / "public" / "workers"
-SOURCE_DIR = pathlib.Path("/Users/stevenm/Downloads")
+SOURCE_DIR = pathlib.Path(os.environ.get("WORKER_POSE_SOURCE_DIR", ROOT / "source-worker-poses"))
 
 POSES = {
     "idle": ["Idle Pose.png"] * 4,
