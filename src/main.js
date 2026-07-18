@@ -65,8 +65,10 @@ import {
   MAX_LEADERBOARD_NAME_LENGTH,
   projectBudget,
   projectDay,
+  projectDayPace,
   projectDuration,
   projectTemplateIndex,
+  scheduledGameplayDuration,
   pushPlayerTrade,
   pushSelectedTrade,
   quitToLeaderboard,
@@ -919,9 +921,11 @@ function scheduleVarianceStat() {
 }
 
 function taktPlan() {
-  const periodCount = Math.max(state.day, gameplayDuration());
+  const plannedPeriodCount = scheduledGameplayDuration();
+  const periodCount = Math.max(state.day, plannedPeriodCount);
   const periods = Array.from({ length: periodCount }, (_, index) => index + 1);
   const labels = scheduleHeaderLabels(periods);
+  const overrunStart = state.day > plannedPeriodCount ? plannedPeriodCount : null;
   return `
     <div class="takt-plan">
       <div class="takt-title">
@@ -935,31 +939,43 @@ function taktPlan() {
           <div>${labels.map((label) => `<span>${label}</span>`).join("")}</div>
         </div>
         ${Array.from({ length: levelCount() }, (_, index) => index + 1)
-          .map((level) => taktLevelGroup(level, periods))
+          .map((level) => taktLevelGroup(level, periods, overrunStart))
           .join("")}
       </div>
     </div>
   `;
 }
 
-function taktLevelGroup(level, periods) {
+function taktLevelGroup(level, periods, overrunStart) {
   return `
     <div class="zone-plan-group">Level ${level}</div>
     ${zonesForPlanLevel(level)
-      .map((zone) => taktZoneRow(zone, periods))
+      .map((zone) => taktZoneRow(zone, periods, overrunStart))
       .join("")}
   `;
 }
 
-function taktZoneRow(zone, periods) {
+function taktZoneRow(zone, periods, overrunStart) {
   const entries = zonePlanEntries(zone, periods);
   return `
     <div class="zone-plan-row" style="--lane-count: ${entries.laneCount}">
       <strong>${zone}</strong>
       <div class="zone-plan-track">
+        ${scheduleOverrunCurtain(overrunStart, periods.length)}
         ${zonePlanBars(entries.bars)}
       </div>
     </div>
+  `;
+}
+
+function scheduleOverrunCurtain(overrunStart, periodCount) {
+  if (!overrunStart || overrunStart >= periodCount) return "";
+  return `
+    <span
+      class="schedule-overrun-curtain"
+      style="--overrun-left: ${overrunStart}; --overrun-width: ${periodCount - overrunStart}"
+      aria-hidden="true"
+    ></span>
   `;
 }
 
@@ -1093,15 +1109,17 @@ function zoneWorkSpans(trade, zone, weeks) {
   );
 
   if (segments.length > 0) {
-    return segments.map((segment) => {
-      const daySegmentCount = Math.max(
-        1,
-        tradeWorkSegmentCountForDay(trade, segment.day),
-      );
-      const start = segment.day - 1 + segment.order / daySegmentCount;
-      const end = segment.day - 1 + (segment.order + 1) / daySegmentCount;
-      return { trade, start, end };
-    });
+    return mergeContiguousScheduleSpans(
+      segments.map((segment) => {
+        const daySegmentCount = Math.max(
+          1,
+          tradeWorkSegmentCountForDay(trade, segment.day),
+        );
+        const start = segment.day - 1 + segment.order / daySegmentCount;
+        const end = segment.day - 1 + (segment.order + 1) / daySegmentCount;
+        return { trade, start, end };
+      }),
+    );
   }
 
   const spans = [];
@@ -1133,8 +1151,23 @@ function tradeWorkSegmentCountForDay(trade, day) {
   );
 }
 
+function mergeContiguousScheduleSpans(spans) {
+  return spans
+    .slice()
+    .sort((a, b) => a.start - b.start || a.end - b.end)
+    .reduce((merged, span) => {
+      const previous = merged[merged.length - 1];
+      if (previous && span.start <= previous.end + 0.0001) {
+        previous.end = Math.max(previous.end, span.end);
+        return merged;
+      }
+      merged.push({ ...span });
+      return merged;
+    }, []);
+}
+
 function formatScaledScheduleDay(elapsedPeriods) {
-  const ratio = projectDuration() / gameplayDuration();
+  const ratio = (projectDuration() / gameplayDuration()) * projectDayPace();
   const scaledDay = Math.max(1, elapsedPeriods * ratio);
   return Number.isInteger(scaledDay)
     ? String(scaledDay)

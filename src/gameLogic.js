@@ -493,7 +493,7 @@ export function maybeSpawnRoadblock() {
 }
 
 function plannedRoadblockBudget() {
-  const expectedSpawns = roadblockSpawnPressure() * gameplayDuration();
+  const expectedSpawns = roadblockSpawnPressure() * scheduledGameplayDuration();
   const levelAllowance = Math.max(1, campaignLevel()) * 2;
   return Math.max(1, Math.round(expectedSpawns) + levelAllowance);
 }
@@ -604,12 +604,21 @@ export function gameplayDuration() {
   );
 }
 
+export function scheduledGameplayDuration() {
+  return Math.max(1, Math.round(gameplayDuration() / projectDayPace()));
+}
+
 function baseGameplayDuration() {
   return Math.max(20, BASE_PROJECT_DURATION - projectTemplateIndex() * 2);
 }
 
+export function projectDayPace() {
+  const pace = currentProject().dayPaceMultiplier ?? 1;
+  return Number.isFinite(pace) && pace > 0 ? pace : 1;
+}
+
 export function projectDay(day = state.day) {
-  return Math.round(day * (projectDuration() / gameplayDuration()));
+  return Math.round(day * (projectDuration() / gameplayDuration()) * projectDayPace());
 }
 
 export function projectCostScale() {
@@ -619,7 +628,11 @@ export function projectCostScale() {
 export function scaledLaborCost(baseCost, moraleMultiplier = 1) {
   const laborMultiplier = currentProject().laborCostMultiplier ?? 1;
   return Math.round(
-    baseCost * moraleMultiplier * laborMultiplier * projectCostScale(),
+    baseCost *
+      moraleMultiplier *
+      laborMultiplier *
+      projectDayPace() *
+      projectCostScale(),
   );
 }
 
@@ -688,8 +701,9 @@ function scheduleTighteningMultiplier() {
 }
 
 export function updateLiquidatedDamages() {
-  if (state.day <= gameplayDuration()) return;
-  const damages = liquidatedDamagesPerDay();
+  const daysLate = projectDay() - projectDuration();
+  if (daysLate <= 0) return;
+  const damages = Math.round(liquidatedDamagesPerDay() * projectDayPace());
   state.liquidatedDamages += damages;
   state.profit -= damages;
 }
@@ -699,9 +713,10 @@ export function updateRoadblockDelays() {
     if (roadblock.resolved) return;
     const trade = state.trades[roadblock.tradeId];
     if (trade.zone >= roadblock.zone && !trade.finished) {
-      roadblock.delayDays += 1;
-      state.totalDelayDays += 1;
-      const cost = dailyDelayCost();
+      const delayDays = projectDayPace();
+      roadblock.delayDays += delayDays;
+      state.totalDelayDays += delayDays;
+      const cost = Math.round(dailyDelayCost() * delayDays);
       state.delayCost += cost;
       state.profit -= cost;
     }
@@ -912,9 +927,10 @@ export function returnToTitle() {
 }
 
 export function applyLiquidatedDamages() {
+  const daysLate = Math.max(0, projectDay() - projectDuration());
   state.liquidatedDamages = Math.max(
     state.liquidatedDamages,
-    Math.max(0, state.day - gameplayDuration()) * liquidatedDamagesPerDay(),
+    daysLate * liquidatedDamagesPerDay(),
   );
 }
 
@@ -1075,7 +1091,7 @@ function openSelectionZoneForPlayer(playerIndex) {
 export function roadblockTimer(roadblock) {
   const trade = getTrade(roadblock.tradeId);
   const distance = roadblock.zone - trade.zone;
-  if (distance <= 0) return -roadblock.delayDays;
+  if (distance <= 0) return -Math.round(roadblock.delayDays);
   return distance;
 }
 
