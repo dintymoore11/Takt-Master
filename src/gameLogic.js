@@ -643,7 +643,7 @@ export function scaledLaborCost(baseCost, moraleMultiplier = 1) {
 }
 
 export function dailyDelayCost() {
-  return Math.round(DAILY_DELAY_COST * projectCostPace() * projectCostScale());
+  return Math.round(DAILY_DELAY_COST * projectCostScale());
 }
 
 export function pushCost(trade = null) {
@@ -653,15 +653,11 @@ export function pushCost(trade = null) {
       projectTrades.length
     : PUSH_COST;
   const baseCost = trade?.baseCost ?? averageTradeCost;
-  return Math.round(
-    baseCost * PUSH_COST_MARKUP * projectCostPace() * projectCostScale(),
-  );
+  return Math.round(baseCost * PUSH_COST_MARKUP * projectCostScale());
 }
 
 export function liquidatedDamagesPerDay() {
-  return Math.round(
-    LIQUIDATED_DAMAGES_PER_DAY * projectCostPace() * projectCostScale(),
-  );
+  return Math.round(LIQUIDATED_DAMAGES_PER_DAY * projectCostScale());
 }
 
 export function moveStepMs() {

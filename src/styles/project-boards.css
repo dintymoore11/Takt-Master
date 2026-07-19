@@ -149,6 +149,19 @@
     0 0 14px rgba(127, 224, 24, 0.24);
 }
 
+.project-office .profit-readout.bad {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 42%),
+    var(--bad);
+}
+
+.project-office .profit-readout.bad strong {
+  color: #ffe8e2;
+  text-shadow:
+    0 3px 0 #7d1711,
+    0 0 14px rgba(255, 232, 226, 0.24);
+}
+
 .project-office .game-layout {
   grid-template-columns: 190px minmax(0, 1fr);
   gap: 12px;

@@ -893,8 +893,8 @@ function endScreen() {
         </div>
         <div class="end-stats">
           ${endStat(scheduleVariance >= 0 ? "Days early" : "Days behind", `${Math.abs(scheduleVariance)} days`, scheduleVariance < 0 ? "bad" : "")}
-          ${endStat("Costs", formatMoney(totalProjectCosts()), failed ? "bad" : "")}
-          ${endStat("Schedule efficiency", `${scheduleEfficiency().toFixed(0)}%`, failed ? "bad" : "")}
+          ${endStat("Costs", formatMoney(totalProjectCosts()), totalProjectCosts() > projectBudget() ? "bad" : "")}
+          ${endStat("Schedule efficiency", `${scheduleEfficiency().toFixed(0)}%`)}
         </div>
         ${taktPlan()}
         <div class="end-actions">
@@ -924,7 +924,7 @@ function taktPlan() {
   const plannedPeriodCount = scheduledGameplayDuration();
   const periodCount = Math.max(state.day, plannedPeriodCount);
   const periods = Array.from({ length: periodCount }, (_, index) => index + 1);
-  const labels = scheduleHeaderLabels(periods);
+  const labels = scheduleHeaderLabels(periodCount);
   const overrunStart = state.day > plannedPeriodCount ? plannedPeriodCount : null;
   return `
     <div class="takt-plan">
@@ -936,7 +936,12 @@ function taktPlan() {
         ${tradeLegend()}
         <div class="zone-plan-header">
           <span>Zone</span>
-          <div>${labels.map((label) => `<span>${label}</span>`).join("")}</div>
+          <div class="schedule-label-track">${labels
+            .map(
+              ({ label, position }) =>
+                `<span class="schedule-day-label" style="left: ${position.toFixed(3)}%">${label}</span>`,
+            )
+            .join("")}</div>
         </div>
         ${Array.from({ length: levelCount() }, (_, index) => index + 1)
           .map((level) => taktLevelGroup(level, periods, overrunStart))
@@ -1015,24 +1020,30 @@ function zonePlanEntries(zone, periods) {
   };
 }
 
-function scheduleHeaderLabels(periods) {
-  const maxDay = projectDay(periods.length);
+function scheduleHeaderLabels(periodCount) {
+  const maxDay = scaledScheduleDayValue(periodCount);
   const interval = scheduleLabelInterval(maxDay);
-  let nextLabel = interval;
+  const labels = [];
 
-  return periods.map((period) => {
-    const previousDay = projectDay(period - 1);
-    const currentDay = projectDay(period);
-    const crossedLabel = previousDay < nextLabel && currentDay >= nextLabel;
-    const finalLabel =
-      period === periods.length && currentDay > 0 && currentDay < nextLabel;
+  for (let label = interval; label <= maxDay + 0.0001; label += interval) {
+    labels.push(scheduleHeaderLabel(label, periodCount));
+  }
 
-    if (!crossedLabel && !finalLabel) return "";
+  const roundedMaxDay = Math.round(maxDay);
+  const lastLabel = labels[labels.length - 1]?.label ?? 0;
+  if (roundedMaxDay > 0 && roundedMaxDay > lastLabel) {
+    labels.push(scheduleHeaderLabel(roundedMaxDay, periodCount));
+  }
 
-    const label = finalLabel ? currentDay : nextLabel;
-    while (nextLabel <= currentDay) nextLabel += interval;
-    return label;
-  });
+  return labels;
+}
+
+function scheduleHeaderLabel(label, periodCount) {
+  const elapsedPeriod = label / scheduleDayRatio();
+  return {
+    label,
+    position: Math.max(0, Math.min(100, (elapsedPeriod / periodCount) * 100)),
+  };
 }
 
 function scheduleLabelInterval(maxDay) {
@@ -1166,9 +1177,16 @@ function mergeContiguousScheduleSpans(spans) {
     }, []);
 }
 
+function scheduleDayRatio() {
+  return (projectDuration() / gameplayDuration()) * projectDayPace();
+}
+
+function scaledScheduleDayValue(elapsedPeriods) {
+  return elapsedPeriods * scheduleDayRatio();
+}
+
 function formatScaledScheduleDay(elapsedPeriods) {
-  const ratio = (projectDuration() / gameplayDuration()) * projectDayPace();
-  const scaledDay = Math.max(1, elapsedPeriods * ratio);
+  const scaledDay = Math.max(1, scaledScheduleDayValue(elapsedPeriods));
   return Number.isInteger(scaledDay)
     ? String(scaledDay)
     : scaledDay.toFixed(1).replace(/\.0$/, "");

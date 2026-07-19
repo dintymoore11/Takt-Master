@@ -133,6 +133,7 @@
 }
 
 .profit-readout.bad strong {
+  color: #ffe8e2;
   text-shadow: 0 4px #7d1711;
 }
 
