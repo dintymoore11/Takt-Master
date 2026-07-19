@@ -707,7 +707,7 @@ function delayCalloutForZone(zoneNumber) {
   });
 
   if (!roadblock) return "";
-  return `delay -${formatMoney(roadblock.delayDays * dailyDelayCost())}`;
+  return `delay -${formatMoney(Math.round(roadblock.delayDays * dailyDelayCost()))}`;
 }
 
 function workerToken(trade) {
